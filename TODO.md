@@ -13,12 +13,28 @@ my other garbage programs.
 Fields will include:
 - pointer to this list's anchor
 - length of list
+- the status of the last operation that was performed on the list
+
+## Error codes
+These error codes will be returned by linked list operations, and will be
+present in the status field of the linked list.
+
+### SUCCESS
+### LIST_UNINITIALIZED
+### LIST_NULL
+### LIST_NOT_FOUND
+### LIST_EMPTY
 
 ## Function Definitions
 
 ### `llist_init`
 Takes a pointer to an uninitialized linked list as an argument. Allocates an
 anchor for this list.
+
+### `llist_destroy`
+Takes a pointer to an initialized linked list as an argument. Frees the memory
+for the anchor and all elements still in the list. Note that it does not free
+the `void *data` fields of the stored elements.
 
 ### `llist_push`
 Takes a pointer to an llist and a `void *`. Prepends the element to the list.
@@ -42,18 +58,6 @@ returns it.
 ### `llist_peek_back`
 Takes a pointer to a llist. Returns the element at the end of the list.
 
-### `llist_insert`
-Takes a pointer to a llist, a `void *`, and an index. Attempts to insert the
-provided value at the provided index.
-
-### `llist_delete`
-Takes a pointer to a llist and an index. Attempts to delete the element in the
-list at the given index.
-
-### `llist_get`
-Takes a pointer to a llist and an index. Attempts to return the element at the
-given location in the list.
-
 ### `llist_clear`
 Takes a pointer to a llist and an 
 
@@ -62,11 +66,6 @@ Takes a pointer to a llist. Returns 1 if the list is empty and 0 otherwise.
 
 ### `llist_size`
 Takes a pointer to a llist. Returns the size of the list.
-
-### `llist_free`
-Takes a pointer to a llist. Frees the list and any nodes associated with it.
-Note that it only frees the nodes and the list itself, not the data stored
-inside the nodes.
 
 # Node
 The node structure will be used to hold the elements of a Linked List. Since it
@@ -77,3 +76,9 @@ nodes.
 Fields will include:
 - pointer to next node
 - pointer to previous node
+
+# ArrayList
+
+## Structure Definition
+
+## Function Definitions
