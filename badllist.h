@@ -1,37 +1,36 @@
 #ifndef __BADLLIST_H__
 #define __BADLLIST_H__
 #include <stddef.h>
+#include "badlib.h"
 
-typedef struct node Node;
-struct node {
-  Node *next;
-  Node *prev;
+typedef struct node {
+  struct node *next;
+  struct node *prev;
   void *data;
-};
+} Node;
 
-typedef struct llist LinkedList;
-struct llist {
+typedef struct llist {
   Node *anchor;
   size_t size;
-  int last_status;
-};
+  size_t max_size;
+  Blib_Destroyer data_destroy;
+  Blib_Comparator data_compare;
+} LinkedList;
 
-int llist_init(LinkedList *list);
+int llist_init(LinkedList *list, Blib_Destroyer dest, Blib_Comparator comp);
 int llist_destroy(LinkedList *list);
 
-int llist_push(LinkedList *list, void *element);
-void *llist_pop(LinkedList *list);
-void *llist_peek(LinkedList *list);
+int llist_push_front(LinkedList *list, void *element);
+void *llist_pop_front(LinkedList *list);
+void *llist_front(LinkedList *list);
 
 int llist_push_back(LinkedList *list, void *element);
 void *llist_pop_back(LinkedList *list);
-void *llist_peek_back(LinkedList *list);
+void *llist_back(LinkedList *list);
 
 void *llist_get(LinkedList *list, size_t index);
 int llist_insert(LinkedList *list, void *element, size_t index);
 int llist_delete(LinkedList *list, size_t index);
-
-int llist_clear(LinkedList *list);
 
 size_t llist_size(LinkedList *list);
 int llist_empty(LinkedList *list);
