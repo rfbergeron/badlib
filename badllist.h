@@ -13,11 +13,12 @@ typedef struct llist {
   Node *anchor;
   size_t size;
   size_t max_size;
-  Blib_Destroyer data_destroy;
-  Blib_Comparator data_compare;
+  BlibDestroyer data_destroy;
+  BlibComparator data_compare;
+  BlibError last_status;
 } LinkedList;
 
-int llist_init(LinkedList *list, Blib_Destroyer dest, Blib_Comparator comp);
+int llist_init(LinkedList *list, BlibDestroyer dest, BlibComparator comp);
 int llist_destroy(LinkedList *list);
 
 int llist_push_front(LinkedList *list, void *element);

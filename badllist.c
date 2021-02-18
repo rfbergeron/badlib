@@ -9,6 +9,11 @@ static int llist_valid(LinkedList *list) {
   return list != NULL && list->anchor != NULL;
 }
 
+static int llist_error(LinkedList *list, BlibError error) {
+  list->last_status = error;
+  return !(error == BLIB_SUCCESS);
+}
+
 static int node_init(LinkedList *list, Node *pred, Node *succ, void *element) {
     Node *new_node = malloc(sizeof(Node));
     new_node->data = element;
@@ -21,7 +26,6 @@ static int node_init(LinkedList *list, Node *pred, Node *succ, void *element) {
 }
 
 static int node_destroy(LinkedList *list, Node *node, void **wants_data) {
-    int status = 0;
     node->next->prev = node->prev;
     node->prev->next = node->next;
     if(wants_data) {
@@ -31,7 +35,7 @@ static int node_destroy(LinkedList *list, Node *node, void **wants_data) {
     }
     free(node);
     --list->size;
-    return status;
+    return llist_error(list, BLIB_SUCCESS);
 }
 
 static Node *node_at(LinkedList *list, size_t index) {
@@ -45,7 +49,7 @@ static Node *node_at(LinkedList *list, size_t index) {
 }
 
 /* initializer/destructor */
-int llist_init(LinkedList *list, Blib_Destroyer dest, Blib_Comparator comp) {
+int llist_init(LinkedList *list, BlibDestroyer dest, BlibComparator comp) {
   list->anchor = malloc(sizeof(Node));
   if (list->anchor == NULL) return 1;
   list->anchor->next = list->anchor;
