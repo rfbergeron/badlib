@@ -7,6 +7,11 @@ my other garbage programs.
 - Heap
 - HashMap? (will most likely end up using farmhash/cityhash)
 
+# Actual TODO
+- return a more meaningful value on error than NULL so that the user can
+  distinguish between when they are seeing a NULL value that they inserted
+  and an error indicator
+
 # thinky emoji
 Maybe I should implement a more complicated hybrid data structure? It would
 support both random access array and queue/deque operations. It would start out
@@ -64,6 +69,14 @@ information about the data structure at no extra cost.
 
 Linked lists and array lists are the obvious ones, but you might be able to
 squeeze a binary tree implementation out of it by using a different node structure
+
+# detecting errors
+Where should the error field of the data structure be set?
+The validation function could set it or it could return the error and require
+it to be set in the calling location. The only issue is that the caller would
+have no way of knowing if the passed list is NULL. Additionally, the node
+functions would also have to return their error instead of just setting it
+themselves.
 
 ```
 struct sub_list {

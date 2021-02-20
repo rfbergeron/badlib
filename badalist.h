@@ -4,9 +4,9 @@
 
 typedef struct alist ArrayList;
 struct alist {
-    void **data;
-    size_t size;
-    size_t max_size;
+  void **data;
+  size_t size;
+  size_t max_size;
 };
 
 int alist_init(ArrayList *list, size_t size);

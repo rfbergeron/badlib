@@ -49,7 +49,7 @@ spotless: clean
 	rm -f ${EXECNAME} ${FMT} *.output *.out
 
 ci: 
-	git add ${HDR} ${SRC} ${MKFILE} units.c .gitignore
+	git add ${HDR} ${SRC} ${MKFILE} units.c .gitignore TODO.md
 
 dep: ${ALLSRC} ${ALLHDR} units.c
 	${CDEP} ${ALLSRC} units.c >> ${DEPFILE}

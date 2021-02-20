@@ -3,9 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "badllist.h"
 #include "badalist.h"
-
+#include "badllist.h"
 
 static ArrayList *arraylist = NULL;
 static LinkedList *linkedlist = NULL;
@@ -61,22 +60,22 @@ int clean_alist_suite(void) {
 }
 
 void test_alist(void) {
-    float *f = malloc(sizeof(float));
-    *f = 1.25f;
-    CU_ASSERT_PTR_NOT_NULL_FATAL(arraylist);
-    CU_ASSERT(arraylist->size == 10);
-    CU_ASSERT(arraylist->max_size == 16);
-    CU_ASSERT(0 == alist_insert(arraylist, f, 5));
-    CU_ASSERT_PTR_EQUAL(alist_get(arraylist, 5), f);
-    CU_ASSERT(0 == alist_delete(arraylist, 5));
-    free(f);
+  float *f = malloc(sizeof(float));
+  *f = 1.25f;
+  CU_ASSERT_PTR_NOT_NULL_FATAL(arraylist);
+  CU_ASSERT(arraylist->size == 10);
+  CU_ASSERT(arraylist->max_size == 16);
+  CU_ASSERT(0 == alist_insert(arraylist, f, 5));
+  CU_ASSERT_PTR_EQUAL(alist_get(arraylist, 5), f);
+  CU_ASSERT(0 == alist_delete(arraylist, 5));
+  free(f);
 }
 
 void test_alist_errors(void) {
-    CU_ASSERT_PTR_NULL(alist_get(NULL, 10));
-    CU_ASSERT_PTR_NULL(alist_get(arraylist, 11));
-    CU_ASSERT(1 == alist_insert(arraylist, NULL, 11));
-    CU_ASSERT(1 == alist_resize(arraylist, 0));
+  CU_ASSERT_PTR_NULL(alist_get(NULL, 10));
+  CU_ASSERT_PTR_NULL(alist_get(arraylist, 11));
+  CU_ASSERT(1 == alist_insert(arraylist, NULL, 11));
+  CU_ASSERT(1 == alist_resize(arraylist, 0));
 }
 
 void test_llist_errors(void) {
@@ -137,8 +136,7 @@ int main() {
        CU_add_test(pSuite, "test of error handling", test_llist_errors)) ||
       (NULL == CU_add_test(pSuite, "test of operation sequence",
                            test_llist_sequence)) ||
-      (NULL == CU_add_test(pSuite2, "test of basic array",
-                           test_alist)) ||
+      (NULL == CU_add_test(pSuite2, "test of basic array", test_alist)) ||
       (NULL == CU_add_test(pSuite2, "test of array error handling",
                            test_alist_errors)) ||
       (NULL ==

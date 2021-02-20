@@ -1,6 +1,7 @@
 #ifndef __BADLLIST_H__
 #define __BADLLIST_H__
 #include <stddef.h>
+
 #include "badlib.h"
 
 typedef struct node {
