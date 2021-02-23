@@ -12,6 +12,11 @@ my other garbage programs.
   distinguish between when they are seeing a NULL value that they inserted
   and an error indicator
 
+# how to do map buckets
+Using an already implemented data structure, like the linked list, would be
+somewhat easier. In this case, it would also be somewhat wasteful, since
+it's a doubly linked list and we only need to search one way.
+
 # thinky emoji
 Maybe I should implement a more complicated hybrid data structure? It would
 support both random access array and queue/deque operations. It would start out

@@ -5,9 +5,11 @@
 
 #include "badalist.h"
 #include "badllist.h"
+#include "badmap.h"
 
 static ArrayList *arraylist = NULL;
 static LinkedList *linkedlist = NULL;
+static Map *map = NULL;
 
 int init_llist_suite(void) {
   linkedlist = malloc(sizeof(*linkedlist));
@@ -46,38 +48,6 @@ void test_llist_deque(void) {
   free(f);
 }
 
-int init_alist_suite(void) {
-  arraylist = malloc(sizeof(*arraylist));
-  if (arraylist == NULL || alist_init(arraylist, 10)) return 1;
-  return 0;
-}
-
-int clean_alist_suite(void) {
-  if (alist_destroy(arraylist)) return 1;
-  free(arraylist);
-  arraylist = NULL;
-  return 0;
-}
-
-void test_alist(void) {
-  float *f = malloc(sizeof(float));
-  *f = 1.25f;
-  CU_ASSERT_PTR_NOT_NULL_FATAL(arraylist);
-  CU_ASSERT(arraylist->size == 10);
-  CU_ASSERT(arraylist->max_size == 16);
-  CU_ASSERT(0 == alist_insert(arraylist, f, 5));
-  CU_ASSERT_PTR_EQUAL(alist_get(arraylist, 5), f);
-  CU_ASSERT(0 == alist_delete(arraylist, 5));
-  free(f);
-}
-
-void test_alist_errors(void) {
-  CU_ASSERT_PTR_NULL(alist_get(NULL, 10));
-  CU_ASSERT_PTR_NULL(alist_get(arraylist, 11));
-  CU_ASSERT(1 == alist_insert(arraylist, NULL, 11));
-  CU_ASSERT(1 == alist_resize(arraylist, 0));
-}
-
 void test_llist_errors(void) {
   CU_ASSERT(1 == llist_push_front(NULL, NULL));
   CU_ASSERT(0 == llist_push_front(linkedlist, NULL));
@@ -110,6 +80,38 @@ void test_llist_sequence(void) {
   CU_ASSERT(1 == llist_empty(linkedlist));
 
   free(i);
+}
+
+int init_alist_suite(void) {
+  arraylist = malloc(sizeof(*arraylist));
+  if (arraylist == NULL || alist_init(arraylist, 10)) return 1;
+  return 0;
+}
+
+int clean_alist_suite(void) {
+  if (alist_destroy(arraylist)) return 1;
+  free(arraylist);
+  arraylist = NULL;
+  return 0;
+}
+
+void test_alist(void) {
+  float *f = malloc(sizeof(float));
+  *f = 1.25f;
+  CU_ASSERT_PTR_NOT_NULL_FATAL(arraylist);
+  CU_ASSERT(arraylist->size == 10);
+  CU_ASSERT(arraylist->max_size == 16);
+  CU_ASSERT(0 == alist_insert(arraylist, f, 5));
+  CU_ASSERT_PTR_EQUAL(alist_get(arraylist, 5), f);
+  CU_ASSERT(0 == alist_delete(arraylist, 5));
+  free(f);
+}
+
+void test_alist_errors(void) {
+  CU_ASSERT_PTR_NULL(alist_get(NULL, 10));
+  CU_ASSERT_PTR_NULL(alist_get(arraylist, 11));
+  CU_ASSERT(1 == alist_insert(arraylist, NULL, 11));
+  CU_ASSERT(1 == alist_resize(arraylist, 0));
 }
 
 int main() {
