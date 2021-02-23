@@ -2,12 +2,15 @@
 #define __BADALIST_H__
 #include <stddef.h>
 
-typedef struct alist ArrayList;
-struct alist {
+#include "badlib.h"
+
+typedef struct alist {
   void **data;
   size_t size;
   size_t max_size;
-};
+  size_t element_count;
+  BlibError last_status;
+} ArrayList;
 
 int alist_init(ArrayList *list, size_t size);
 int alist_destroy(ArrayList *list);
@@ -18,7 +21,6 @@ int alist_delete(ArrayList *list, size_t index);
 
 int alist_resize(ArrayList *list, size_t size);
 
-int alist_clear(ArrayList *list);
-
 size_t alist_size(ArrayList *list);
+int alist_empty(ArrayList *list);
 #endif
