@@ -11,11 +11,34 @@ my other garbage programs.
 - return a more meaningful value on error than NULL so that the user can
   distinguish between when they are seeing a NULL value that they inserted
   and an error indicator
+- have makefile compile murmur in a more normal way, via recursive call
+- proper unit testing for map and arraylist
+- maybe change format of library functions so that they always return an error
+  code?
+- macroify structures
 
 # how to do map buckets
 Using an already implemented data structure, like the linked list, would be
 somewhat easier. In this case, it would also be somewhat wasteful, since
 it's a doubly linked list and we only need to search one way.
+
+# how to use macros to make this more versatile
+If macros are used for the data types, a couple of things need to be changed:
+1. the comparison and destruction functions will need to use macros to determine
+   the types they accept
+2. the default and error values returned by operations will need to be defined
+   by the user when they create the data structure type
+3. any time `void*` is used in the code will need to be scrubbed and replaced with
+   a macro for the type being used
+4. i (or the user) need to decide whether to return by value or by pointer;
+   returning by value makes sense for numeric types and small structures but for
+   strings and large structures it would make more sense to return pointers
+5. it it also worth noting that for a linked list or array list that store things
+   by value, it may not be meaningful to have an invalid/default value (ie what
+   would be a reasonable default value for an integer or char?) and there should
+   be a way to indicate this in the macro
+6. the default value could be defined as a pointer (even if the actual list stores
+   a simple type) so that the structure can check if it is null before using it)
 
 # thinky emoji
 Maybe I should implement a more complicated hybrid data structure? It would

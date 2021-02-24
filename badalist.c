@@ -19,13 +19,16 @@ int alist_valid(ArrayList *list) {
 }
 
 /* external functions */
-int alist_init(ArrayList *list, size_t size) {
-  if (size < 1) return 1;
+int alist_init(ArrayList *list, size_t size, BlibDestroyer dest, BlibComparator comp) {
+  if (size < 1)
+    return 1;
   size_t to_alloc = 1;
   while (to_alloc < size) to_alloc = to_alloc * 2;
-  list->data = malloc(to_alloc * sizeof(void *));
+  list->data = calloc(to_alloc, sizeof(void *));
   list->size = size;
   list->max_size = to_alloc;
+  list->data_destroy = dest;
+  list->data_compare = comp;
   list->last_status = BLIB_SUCCESS;
   return 0;
 }
@@ -41,7 +44,11 @@ void *alist_get(ArrayList *list, size_t index) {
   } else if (index >= list->size) {
     list->last_status = BLIB_OUT_OF_BOUNDS;
     return NULL;
+  } else if (!(list->data[index])) {
+    list->last_status = W_BLIB_NOT_FOUND;
+    return NULL;
   }
+
   return list->data[index];
 }
 
@@ -52,7 +59,15 @@ int alist_insert(ArrayList *list, void *element, size_t index) {
     list->last_status = BLIB_OUT_OF_BOUNDS;
     return 1;
   }
+
+  /* remember to get rid of the old element if it exists */
+  if(list->data_destroy && list->data[index]) {
+    (list->data_destroy)(list->data[index]);
+    --(list->count);
+  }
+
   list->data[index] = element;
+  ++(list->count);
   return 0;
 }
 
@@ -62,7 +77,13 @@ int alist_delete(ArrayList *list, size_t index) {
   } else if (index >= list->size) {
     list->last_status = BLIB_OUT_OF_BOUNDS;
     return 1;
+  } else if (!(list->data[index])) {
+    list->last_status = W_BLIB_NOT_FOUND;
+    return 1;
   }
+
+  if(list->data_destroy)
+    (list->data_destroy)(list->data[index]);
   list->data[index] = NULL;
   return 0;
 }
@@ -91,4 +112,4 @@ int alist_resize(ArrayList *list, size_t size) {
 }
 
 size_t alist_size(ArrayList *list) { return list->size; }
-int alist_empty(ArrayList *list) { return list->element_count == 0; }
+int alist_empty(ArrayList *list) { return list->count == 0; }

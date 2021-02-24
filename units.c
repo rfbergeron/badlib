@@ -84,7 +84,7 @@ void test_llist_sequence(void) {
 
 int init_alist_suite(void) {
   arraylist = malloc(sizeof(*arraylist));
-  if (arraylist == NULL || alist_init(arraylist, 10)) return 1;
+  if (arraylist == NULL || alist_init(arraylist, 10, free, NULL)) return 1;
   return 0;
 }
 
@@ -104,7 +104,6 @@ void test_alist(void) {
   CU_ASSERT(0 == alist_insert(arraylist, f, 5));
   CU_ASSERT_PTR_EQUAL(alist_get(arraylist, 5), f);
   CU_ASSERT(0 == alist_delete(arraylist, 5));
-  free(f);
 }
 
 void test_alist_errors(void) {

@@ -11,7 +11,9 @@ static int bucket_node_init(Map *map, size_t index, void *key, void *value) {
   new_node = malloc(sizeof(BucketNode));
   new_node->key = key;
   new_node->value = value;
+  new_node->next = NULL;
   ++(map->count);
+  ++(map->buckets[index].size);
 }
 
 static int bucket_node_destroy(Map *map, BucketNode *node, BucketNode *prev,
@@ -27,12 +29,14 @@ static int bucket_node_destroy(Map *map, BucketNode *node, BucketNode *prev,
 
   free(node);
   --(map->count);
+  --(map->buckets[index].size);
 }
 
 /* external functions */
 int map_init(Map *map, size_t size, size_t key_size, BlibDestroyer key_dest,
              BlibDestroyer value_dest, BlibComparator key_comp) {
-  map->buckets = malloc(sizeof(map->buckets) * size);
+  /* the head node must be set to NULL, so we use calloc here */
+  map->buckets = calloc(size, sizeof(map->buckets));
   map->size = size;
   map->key_size = key_size;
   map->key_destroy = key_dest;
@@ -42,7 +46,8 @@ int map_init(Map *map, size_t size, size_t key_size, BlibDestroyer key_dest,
 }
 
 int map_destroy(Map *map) {
-  for (size_t i = 0; i < map->size; ++i) {
+  size_t i;
+  for (i = 0; i < map->size; ++i) {
     while (map->buckets[i].head) {
       bucket_node_destroy(map, map->buckets[i].head, NULL, i);
     }
@@ -93,7 +98,7 @@ int map_delete(Map *map, void *key) {
       }
     } else {
       if (prev->key == key) {
-        /* bucket is at the start of the chain */
+        /* bucket is at the head of the chain */
         status = bucket_node_destroy(map, prev, NULL, hash);
       } else {
         status = 1;
