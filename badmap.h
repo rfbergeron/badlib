@@ -4,15 +4,10 @@
 
 #include "badlib.h"
 
-typedef struct bucket_node {
+typedef struct bucket {
   void *key;
   void *value;
-  struct bucket_node *next;
-} BucketNode;
-
-typedef struct bucket {
-  BucketNode *head;
-  size_t size;
+  struct bucket *next;
 } Bucket;
 
 typedef struct map {
@@ -20,6 +15,8 @@ typedef struct map {
   size_t size;
   size_t count;
   size_t key_size;
+  void *default_key;
+  void *default_value;
   BlibDestroyer key_destroy;
   BlibDestroyer value_destroy;
   BlibComparator key_compare;

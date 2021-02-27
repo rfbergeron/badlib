@@ -24,6 +24,13 @@ int clean_llist_suite(void) {
   return 0;
 }
 
+void test_llist_defaults(void) {
+  /* tests that the default values hold true for linked lists */
+  CU_ASSERT_PTR_EQUAL(free, linkedlist->data_destroy);
+  CU_ASSERT_PTR_EQUAL(linkedlist->anchor->next, linkedlist->anchor->prev);
+  CU_ASSERT_PTR_EQUAL(linkedlist->anchor->next, linkedlist->anchor);
+}
+
 void test_llist_queue(void) {
   float *f = malloc(sizeof(float));
   *f = 2.5f;
@@ -95,6 +102,11 @@ int clean_alist_suite(void) {
   return 0;
 }
 
+void test_alist_defaults(void) {
+  CU_ASSERT_EQUAL(0, arraylist->count);
+  CU_ASSERT_EQUAL(BLIB_SUCCESS, arraylist->last_status);
+}
+
 void test_alist(void) {
   float *f = malloc(sizeof(float));
   *f = 1.25f;
@@ -104,6 +116,7 @@ void test_alist(void) {
   CU_ASSERT(0 == alist_insert(arraylist, f, 5));
   CU_ASSERT_PTR_EQUAL(alist_get(arraylist, 5), f);
   CU_ASSERT(0 == alist_delete(arraylist, 5));
+  CU_ASSERT(1 == alist_empty(arraylist));
 }
 
 void test_alist_errors(void) {
@@ -111,37 +124,90 @@ void test_alist_errors(void) {
   CU_ASSERT_PTR_NULL(alist_get(arraylist, 11));
   CU_ASSERT(1 == alist_insert(arraylist, NULL, 11));
   CU_ASSERT(1 == alist_resize(arraylist, 0));
+  CU_ASSERT_PTR_NULL(alist_get(arraylist, 0));
+  CU_ASSERT(W_BLIB_NOT_FOUND == arraylist->last_status);
+  CU_ASSERT(1 == alist_delete(arraylist, 0));
+  CU_ASSERT(W_BLIB_NOT_FOUND == arraylist->last_status);
+}
+
+int init_map_suite(void) {
+  /* use integers for keys */
+  map = malloc(sizeof(Map));
+  return map_init(map, 20, sizeof(int), NULL, NULL, NULL);
+}
+
+int clean_map_suite(void) { return map_destroy(map); }
+
+void test_map_basic(void) {
+  int k = 5;
+  char *v = "fuck you";
+  CU_ASSERT(0 == map_insert(map, &k, v));
+  CU_ASSERT_PTR_EQUAL(v, map_get(map, &k));
+  CU_ASSERT(0 == map_delete(map, &k));
+  CU_ASSERT_PTR_NULL(map_get(map, &k));
+
+  /* test that freeing of values works */
+  map->value_destroy = free;
+  float *fs = malloc(4 * sizeof(float));
+  fs[0] = 5.5f;
+  fs[3] = 1.6f;
+  char *k2 = "eat ass";
+
+  CU_ASSERT(0 == map_insert(map, k2, fs));
+  CU_ASSERT_PTR_EQUAL(fs, map_get(map, k2));
+  CU_ASSERT(0 == map_delete(map, k2));
+
+  float *fs2 = malloc(sizeof(float));
+  short *fs3 = malloc(sizeof(short));
+  *fs2 = 6.9f;
+  *fs3 = 42;
+  char *k3 = "ratioed";
+
+  CU_ASSERT(0 == map_insert(map, k3, fs2));
+  CU_ASSERT_PTR_EQUAL(fs2, map_get(map, k3));
+  CU_ASSERT(0 == map_insert(map, k3, fs3));
+  CU_ASSERT_PTR_EQUAL(fs3, map_get(map, k3));
+  CU_ASSERT(0 == map_delete(map, k3));
 }
 
 int main() {
   CU_pSuite pSuite = NULL;
   CU_pSuite pSuite2 = NULL;
+  CU_pSuite pSuite3 = NULL;
 
   /* initialize the CUnit test registry */
   if (CUE_SUCCESS != CU_initialize_registry()) return CU_get_error();
 
   /* add a suite to the registry */
   pSuite =
-      CU_add_suite("LinkedList Suite 1", init_llist_suite, clean_llist_suite);
+      CU_add_suite("LinkedList Suite", init_llist_suite, clean_llist_suite);
   pSuite2 =
-      CU_add_suite("ArrayList Suite 1", init_alist_suite, clean_alist_suite);
-  if (NULL == pSuite) {
+      CU_add_suite("ArrayList Suite", init_alist_suite, clean_alist_suite);
+  pSuite3 = CU_add_suite("Map Suite", init_map_suite, clean_map_suite);
+  if (NULL == pSuite || NULL == pSuite2 || NULL == pSuite3) {
     CU_cleanup_registry();
     return CU_get_error();
   }
 
   /* add the tests to the suite */
-  if ((NULL ==
-       CU_add_test(pSuite, "test of queue functions", test_llist_queue)) ||
+  if (
+      /* linked list tests */
       (NULL ==
-       CU_add_test(pSuite, "test of error handling", test_llist_errors)) ||
-      (NULL == CU_add_test(pSuite, "test of operation sequence",
-                           test_llist_sequence)) ||
-      (NULL == CU_add_test(pSuite2, "test of basic array", test_alist)) ||
-      (NULL == CU_add_test(pSuite2, "test of array error handling",
-                           test_alist_errors)) ||
+       CU_add_test(pSuite, "test default values", test_llist_defaults)) ||
+      (NULL == CU_add_test(pSuite, "test queue functions", test_llist_queue)) ||
+      (NULL == CU_add_test(pSuite, "test deque functions", test_llist_deque)) ||
+      (NULL == CU_add_test(pSuite, "test error handling", test_llist_errors)) ||
       (NULL ==
-       CU_add_test(pSuite, "test of deque functions", test_llist_deque))) {
+       CU_add_test(pSuite, "test operation sequence", test_llist_sequence)) ||
+      /* array list tests */
+      (NULL ==
+       CU_add_test(pSuite2, "test default values", test_alist_defaults)) ||
+      (NULL == CU_add_test(pSuite2, "test basic functionality", test_alist)) ||
+      (NULL ==
+       CU_add_test(pSuite2, "test error handling", test_alist_errors)) ||
+      (NULL == CU_add_test(pSuite3, "test basic functions", test_map_basic))
+      /* map tests */
+  ) {
     CU_cleanup_registry();
     return CU_get_error();
   }

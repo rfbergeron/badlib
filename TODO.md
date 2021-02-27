@@ -17,111 +17,6 @@ my other garbage programs.
   code?
 - macroify structures
 
-# how to do map buckets
-Using an already implemented data structure, like the linked list, would be
-somewhat easier. In this case, it would also be somewhat wasteful, since
-it's a doubly linked list and we only need to search one way.
-
-# how to use macros to make this more versatile
-If macros are used for the data types, a couple of things need to be changed:
-1. the comparison and destruction functions will need to use macros to determine
-   the types they accept
-2. the default and error values returned by operations will need to be defined
-   by the user when they create the data structure type
-3. any time `void*` is used in the code will need to be scrubbed and replaced with
-   a macro for the type being used
-4. i (or the user) need to decide whether to return by value or by pointer;
-   returning by value makes sense for numeric types and small structures but for
-   strings and large structures it would make more sense to return pointers
-5. it it also worth noting that for a linked list or array list that store things
-   by value, it may not be meaningful to have an invalid/default value (ie what
-   would be a reasonable default value for an integer or char?) and there should
-   be a way to indicate this in the macro
-6. the default value could be defined as a pointer (even if the actual list stores
-   a simple type) so that the structure can check if it is null before using it)
-
-# thinky emoji
-Maybe I should implement a more complicated hybrid data structure? It would
-support both random access array and queue/deque operations. It would start out
-as a contiguous array, but additional space would be allocated as non-contiguous
-blocks, stored in a similar scheme to a linked list. Pushing and popping from
-the back of the list would just insert the elements to the last empty array
-index. On the other hand, pushing and popping from the
-
-Each contiguous block in this generic list would need a substructure/sublist with
-metadata that allows for the position of elements inside to be changed easily.
-The metadata would need to contain:
-- the allocated size of this contiguous block
-- the first element of this contiguous block that is in use
-- the number of indices following the first element that are in use
-- the index of the first element of this block in the actual array
-  NOTE: it may just be easier to store the offset or to not track this number at
-  all since it could fairly easily be calculated by traversing the blocks
-  in order and counting the number of indices in use in each block
-
-For example, when an element is prepended to the array, a new block of data is
-allocated. The element pushed onto the list is placed into the last space of
-this block, which becomes the first used index of this block, and the first index
-of the overall list. The number of used indices in this block becomes 1, and
-every element in the original block allocated becomes shifted one index up.
-
-Futher elements pushed to the list are placed into the preceeding slots in the
-newly allocated block. Elements pushed to the back of the list are placed in
-later unused slots in the original array.
-
-Concatenating lists becomes very easy since they can just be connected to one
-another using pointers.
-
-There should be a function that consolidates all currently used elements into a
-single 
-
-# more thinky
-elements should have their own structure that stores additional information to
-go with any data structure
-
-at minimum this would have to be:
-- a field for the data
-- a field for 
-
-# useful operations on certain data structures
-## maps/sets
-- getting a list of keys
-- getting a list of values
-- getting a list of key-value pairs
-
-# silly things
-The above structure could be used to mimic the behavior of many data structures
-with little space overhead. Since pointers will be at least 4-byte aligned on
-32-bit systems, we can use the lower two bits of one of the addresses to store
-information about the data structure at no extra cost.
-
-Linked lists and array lists are the obvious ones, but you might be able to
-squeeze a binary tree implementation out of it by using a different node structure
-
-# detecting errors
-Where should the error field of the data structure be set?
-The validation function could set it or it could return the error and require
-it to be set in the calling location. The only issue is that the caller would
-have no way of knowing if the passed list is NULL. Additionally, the node
-functions would also have to return their error instead of just setting it
-themselves.
-
-```
-struct sub_list {
-    sub_list *prev;
-    sub_list *next;
-    void *data;
-    size_t size;
-    size_t max_size;
-    size_t start;
-}
-
-struct generic_list {
-   sub_list *anchor;
-   size_t size;
-};
-```
-
 # Linked List
 
 ## Structure Definition
@@ -201,3 +96,22 @@ Fields:
 - user specified array size
 
 ## Function Definitions
+
+# Map
+
+## Architecture
+The map's primary structure will be a dynamically allocated array of buckets.
+Inserted values with different keys that map to the same slot will be appendend
+to each other in a manner similar to a linked list. 
+
+Since each node is going to be a linked list, it should have a structure similar
+to the deque data structure, where there is an anchor node that does not store
+anything but merely functions as a placeholder. The true head of the linked list
+will be the node after this one. The node at the end of the list will point back
+to the anchor; this means that, when the bucket is empty, the anchor will point to
+itself.
+
+Since the anchor node will be present until the map is destroyed, we have the
+following guarantees:
+1. every bucket in the chain will have a previous bucket
+2. every bucket in the chain will have a succesor bucket

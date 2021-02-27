@@ -14,7 +14,8 @@ typedef struct alist {
   BlibError last_status;
 } ArrayList;
 
-int alist_init(ArrayList *list, size_t size, BlibDestroyer dest, BlibComparator comp);
+int alist_init(ArrayList *list, size_t size, BlibDestroyer dest,
+               BlibComparator comp);
 int alist_destroy(ArrayList *list);
 
 void *alist_get(ArrayList *list, size_t index);
