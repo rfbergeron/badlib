@@ -1,6 +1,5 @@
 #include "badmap.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "murmur3/murmur3.h"
@@ -36,9 +35,6 @@ int map_destroy(Map *map) {
   size_t i;
   for (i = 0; i < map->size; ++i) {
     while (map->buckets[i].next != (map->buckets + i)) {
-      printf("\nPointer of anchor: %p\n", map->buckets + i);
-      printf("\nDeleting bucket at index %i, with pointer %p\n", i,
-             map->buckets[i].next);
       map_delete(map, map->buckets[i].next->key);
     }
   }
@@ -54,7 +50,6 @@ void *map_get(Map *map, void *key) {
   Bucket *current = map->buckets[hash].next;
 
   while (current != (map->buckets + hash) && current->key != key) {
-    printf("\nKEY: %p not found; advancing to %p\n", key, current->next);
     current = current->next;
   }
 
