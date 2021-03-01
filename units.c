@@ -137,7 +137,7 @@ void test_alist_errors(void) {
 int init_map_suite(void) {
   /* use integers for keys */
   map = malloc(sizeof(Map));
-  return map_init(map, 20, sizeof(int), NULL, NULL, NULL);
+  return map_init(map, 20, NULL, NULL, NULL);
 }
 
 int clean_map_suite(void) { return map_destroy(map); }
@@ -145,10 +145,10 @@ int clean_map_suite(void) { return map_destroy(map); }
 void test_map_basic(void) {
   int k = 5;
   char *v = "fuck you";
-  CU_ASSERT(0 == map_insert(map, &k, v));
-  CU_ASSERT_PTR_EQUAL(v, map_get(map, &k));
-  CU_ASSERT(0 == map_delete(map, &k));
-  CU_ASSERT_PTR_NULL(map_get(map, &k));
+  CU_ASSERT(0 == map_insert(map, &k, sizeof(k), v));
+  CU_ASSERT_PTR_EQUAL(v, map_get(map, &k, sizeof(k)));
+  CU_ASSERT(0 == map_delete(map, &k, sizeof(k)));
+  CU_ASSERT_PTR_NULL(map_get(map, &k, sizeof(k)));
 
   /* test that freeing of values works */
   map->value_destroy = free;
@@ -157,9 +157,9 @@ void test_map_basic(void) {
   fs[3] = 1.6f;
   char *k2 = "eat ass";
 
-  CU_ASSERT(0 == map_insert(map, k2, fs));
-  CU_ASSERT_PTR_EQUAL(fs, map_get(map, k2));
-  CU_ASSERT(0 == map_delete(map, k2));
+  CU_ASSERT(0 == map_insert(map, k2, strnlen(k2, 10), fs));
+  CU_ASSERT_PTR_EQUAL(fs, map_get(map, k2, strnlen(k2, 10)));
+  CU_ASSERT(0 == map_delete(map, k2, strnlen(k2, 10)));
 
   float *fs2 = malloc(sizeof(float));
   short *fs3 = malloc(sizeof(short));
@@ -167,11 +167,11 @@ void test_map_basic(void) {
   *fs3 = 42;
   char *k3 = "ratioed";
 
-  CU_ASSERT(0 == map_insert(map, k3, fs2));
-  CU_ASSERT_PTR_EQUAL(fs2, map_get(map, k3));
-  CU_ASSERT(0 == map_insert(map, k3, fs3));
-  CU_ASSERT_PTR_EQUAL(fs3, map_get(map, k3));
-  CU_ASSERT(0 == map_delete(map, k3));
+  CU_ASSERT(0 == map_insert(map, k3, strnlen(k3, 10), fs2));
+  CU_ASSERT_PTR_EQUAL(fs2, map_get(map, k3, strnlen(k3, 10)));
+  CU_ASSERT(0 == map_insert(map, k3, strnlen(k3, 10), fs3));
+  CU_ASSERT_PTR_EQUAL(fs3, map_get(map, k3, strnlen(k3, 10)));
+  CU_ASSERT(0 == map_delete(map, k3, strnlen(k3, 10)));
 }
 
 void test_map_buckets(void) {
@@ -187,11 +187,11 @@ void test_map_buckets(void) {
         *value = rand();
         values[i] = *value;
 
-        CU_ASSERT(0 == map_insert(map, key, value));
+        CU_ASSERT(0 == map_insert(map, key, sizeof(key), value));
     }
 
     for (i = 0; i < numpairs; ++i) {
-        int *val = map_get(map, keys[i]);
+        int *val = map_get(map, keys[i], sizeof(keys[i]));
         CU_ASSERT(values[i] == *val);
     }
 

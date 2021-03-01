@@ -4,7 +4,14 @@
 
 #include "murmur3/murmur3.h"
 
-int map_init(Map *map, size_t size, size_t key_size, BlibDestroyer key_dest,
+/* simple comparison function used as a placeholder when the user does not
+ * provide one of their own.
+ */
+int default_comp (void *k1, void *k2) {
+    return k1 == k2;
+}
+
+int map_init(Map *map, size_t size, BlibDestroyer key_dest,
              BlibDestroyer value_dest, BlibComparator key_comp) {
   if (!map) return 1;
 
@@ -22,10 +29,9 @@ int map_init(Map *map, size_t size, size_t key_size, BlibDestroyer key_dest,
 
   map->size = size;
   map->count = 0;
-  map->key_size = key_size;
   map->key_destroy = key_dest;
   map->value_destroy = value_dest;
-  map->key_compare = key_comp;
+  map->key_compare = key_comp ? key_comp : default_comp;
   return 0;
 }
 
@@ -35,7 +41,9 @@ int map_destroy(Map *map) {
   size_t i;
   for (i = 0; i < map->size; ++i) {
     while (map->buckets[i].next != (map->buckets + i)) {
-      map_delete(map, map->buckets[i].next->key);
+      Bucket *to_free = map->buckets[i].next;
+      int status = map_delete(map, to_free->key, to_free->key_size);
+      if(status) return status;
     }
   }
 
@@ -43,13 +51,13 @@ int map_destroy(Map *map) {
   return 0;
 }
 
-void *map_get(Map *map, void *key) {
+void *map_get(Map *map, void *key, size_t key_size) {
   size_t hash = 0;
-  MurmurHash3_x86_32(key, map->key_size, 0, &hash);
+  MurmurHash3_x86_32(key, key_size, 0, &hash);
   hash = hash % map->size;
   Bucket *current = map->buckets[hash].next;
 
-  while (current != (map->buckets + hash) && current->key != key) {
+  while (current != (map->buckets + hash) && !((map->key_compare)(key, current->key))) {
     current = current->next;
   }
 
@@ -57,22 +65,23 @@ void *map_get(Map *map, void *key) {
   return current->value;
 }
 
-int map_insert(Map *map, void *key, void *value) {
+int map_insert(Map *map, void *key, size_t key_size, void *value) {
   size_t hash = 0;
-  MurmurHash3_x86_32(key, map->key_size, 0, &hash);
+  MurmurHash3_x86_32(key, key_size, 0, &hash);
   hash = hash % map->size;
 
-  if (key == map->buckets[hash].key) {
+  if ((map->key_compare)(map->buckets[hash].key, key)) {
     /* the anchor's value may not be modified */
     return 1;
   }
 
   Bucket *prev = map->buckets + hash;
 
-  while (prev->next != (map->buckets + hash) && prev->next->key != key)
+  while (prev->next != (map->buckets + hash) && !(map->key_compare)(prev->next->key, key))
     prev = prev->next;
 
-  if (prev->next->key == key) {
+
+  if ((map->key_compare)(prev->next->key, key)) {
     /* key already present; replace value */
     if (map->value_destroy) (map->value_destroy)(prev->next->value);
     prev->next->value = value;
@@ -81,6 +90,7 @@ int map_insert(Map *map, void *key, void *value) {
     Bucket *new_bucket = malloc(sizeof(Bucket));
     new_bucket->key = key;
     new_bucket->value = value;
+    new_bucket->key_size = key_size;
     new_bucket->next = prev->next;
     prev->next = new_bucket;
   }
@@ -88,13 +98,14 @@ int map_insert(Map *map, void *key, void *value) {
   return 0;
 }
 
-int map_delete(Map *map, void *key) {
+int map_delete(Map *map, void *key, size_t key_size) {
   size_t hash = 0;
-  MurmurHash3_x86_32(key, map->key_size, 0, &hash);
+  MurmurHash3_x86_32(key, key_size, 0, &hash);
   hash = hash % map->size;
 
   Bucket *prev = map->buckets + hash;
-  while (prev->next != (map->buckets + hash) && prev->next->key != key)
+  while (prev->next != (map->buckets + hash) &&
+      !(map->key_compare)(prev->next->key, key))
     prev = prev->next;
 
   if (prev->next == (map->buckets + hash)) {

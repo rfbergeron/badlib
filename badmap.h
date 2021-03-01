@@ -7,6 +7,7 @@
 typedef struct bucket {
   void *key;
   void *value;
+  size_t key_size;
   struct bucket *next;
 } Bucket;
 
@@ -14,7 +15,6 @@ typedef struct map {
   Bucket *buckets;
   size_t size;
   size_t count;
-  size_t key_size;
   void *default_key;
   void *default_value;
   BlibDestroyer key_destroy;
@@ -23,13 +23,13 @@ typedef struct map {
   BlibError last_status;
 } Map;
 
-int map_init(Map *map, size_t size, size_t key_size, BlibDestroyer key_dest,
+int map_init(Map *map, size_t size, BlibDestroyer key_dest,
              BlibDestroyer value_dest, BlibComparator key_comp);
 int map_destroy(Map *map);
 
-void *map_get(Map *map, void *key);
-int map_insert(Map *map, void *key, void *value);
-int map_delete(Map *map, void *key);
+void *map_get(Map *map, void *key, size_t key_size);
+int map_insert(Map *map, void *key, size_t key_size, void *value);
+int map_delete(Map *map, void *key, size_t key_size);
 
 size_t map_size(Map *map);
 int map_empty(Map *map);
