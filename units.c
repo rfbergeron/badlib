@@ -11,9 +11,10 @@ static ArrayList *arraylist = NULL;
 static LinkedList *linkedlist = NULL;
 static Map *map = NULL;
 
-static char alphanums[36] = { 'a','b','c','d','e','f','g','h','i','j','k','l',
-                              'm','n','o','p','q','r','s','t','u','v','w','x',
-                              'y','z','0','1','2','3','4','5','6','7','8','9'};
+static char alphanums[36] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
+                             'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
+                             's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0',
+                             '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
 int init_llist_suite(void) {
   linkedlist = malloc(sizeof(*linkedlist));
@@ -175,30 +176,30 @@ void test_map_basic(void) {
 }
 
 void test_map_buckets(void) {
-    size_t numpairs = 20;
-    int **keys = malloc(numpairs * sizeof(*keys));
-    int *values = malloc(numpairs * sizeof(int));
-    size_t i;
-    for (i = 0; i < numpairs; ++i) {
-        int *key = malloc(sizeof(int));
-        *key = rand();
-        keys[i] = key;
-        int *value = malloc(sizeof(int));
-        *value = rand();
-        values[i] = *value;
+  size_t numpairs = 20;
+  int **keys = malloc(numpairs * sizeof(*keys));
+  int *values = malloc(numpairs * sizeof(int));
+  size_t i;
+  for (i = 0; i < numpairs; ++i) {
+    int *key = malloc(sizeof(int));
+    *key = rand();
+    keys[i] = key;
+    int *value = malloc(sizeof(int));
+    *value = rand();
+    values[i] = *value;
 
-        CU_ASSERT(0 == map_insert(map, key, sizeof(key), value));
-    }
+    CU_ASSERT(0 == map_insert(map, key, sizeof(key), value));
+  }
 
-    for (i = 0; i < numpairs; ++i) {
-        int *val = map_get(map, keys[i], sizeof(keys[i]));
-        CU_ASSERT(values[i] == *val);
-    }
+  for (i = 0; i < numpairs; ++i) {
+    int *val = map_get(map, keys[i], sizeof(keys[i]));
+    CU_ASSERT(values[i] == *val);
+  }
 
-    map->value_destroy = free;
-    map->key_destroy = free;
-    free(keys);
-    free(values);
+  map->value_destroy = free;
+  map->key_destroy = free;
+  free(keys);
+  free(values);
 }
 
 int main() {

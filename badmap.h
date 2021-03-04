@@ -31,6 +31,7 @@ void *map_get(Map *map, void *key, size_t key_size);
 int map_insert(Map *map, void *key, size_t key_size, void *value);
 int map_delete(Map *map, void *key, size_t key_size);
 
+void map_foreach(Map *map, void (*fn)(void *, void *, size_t, size_t));
 size_t map_size(Map *map);
 int map_empty(Map *map);
 #endif

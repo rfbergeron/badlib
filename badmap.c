@@ -7,9 +7,7 @@
 /* simple comparison function used as a placeholder when the user does not
  * provide one of their own.
  */
-int default_comp (void *k1, void *k2) {
-    return k1 == k2;
-}
+int default_comp(void *k1, void *k2) { return k1 == k2; }
 
 int map_init(Map *map, size_t size, BlibDestroyer key_dest,
              BlibDestroyer value_dest, BlibComparator key_comp) {
@@ -43,7 +41,7 @@ int map_destroy(Map *map) {
     while (map->buckets[i].next != (map->buckets + i)) {
       Bucket *to_free = map->buckets[i].next;
       int status = map_delete(map, to_free->key, to_free->key_size);
-      if(status) return status;
+      if (status) return status;
     }
   }
 
@@ -57,7 +55,8 @@ void *map_get(Map *map, void *key, size_t key_size) {
   hash = hash % map->size;
   Bucket *current = map->buckets[hash].next;
 
-  while (current != (map->buckets + hash) && !((map->key_compare)(key, current->key))) {
+  while (current != (map->buckets + hash) &&
+         !((map->key_compare)(key, current->key))) {
     current = current->next;
   }
 
@@ -66,6 +65,11 @@ void *map_get(Map *map, void *key, size_t key_size) {
 }
 
 int map_insert(Map *map, void *key, size_t key_size, void *value) {
+  if (!map) {
+    return 1;
+  } else if (!(map->buckets)) {
+    return 1;
+  }
   size_t hash = 0;
   MurmurHash3_x86_32(key, key_size, 0, &hash);
   hash = hash % map->size;
@@ -77,9 +81,9 @@ int map_insert(Map *map, void *key, size_t key_size, void *value) {
 
   Bucket *prev = map->buckets + hash;
 
-  while (prev->next != (map->buckets + hash) && !(map->key_compare)(prev->next->key, key))
+  while (prev->next != (map->buckets + hash) &&
+         !(map->key_compare)(prev->next->key, key))
     prev = prev->next;
-
 
   if ((map->key_compare)(prev->next->key, key)) {
     /* key already present; replace value */
@@ -105,7 +109,7 @@ int map_delete(Map *map, void *key, size_t key_size) {
 
   Bucket *prev = map->buckets + hash;
   while (prev->next != (map->buckets + hash) &&
-      !(map->key_compare)(prev->next->key, key))
+         !(map->key_compare)(prev->next->key, key))
     prev = prev->next;
 
   if (prev->next == (map->buckets + hash)) {
@@ -121,6 +125,19 @@ int map_delete(Map *map, void *key, size_t key_size) {
     free(to_free);
   }
   return 0;
+}
+
+void map_foreach(Map *map, void (*fn)(void *, void *, size_t, size_t)) {
+  if (!map || !fn) return;
+  size_t i;
+  for (i = 0; i < map->size; ++i) {
+    size_t j = 0;
+    Bucket *current = map->buckets[i].next;
+    while (current != map->buckets + i) {
+      (fn)(current->key, current->value, i, j++);
+      current = current->next;
+    }
+  }
 }
 
 size_t map_size(Map *map) { return map->size; }
