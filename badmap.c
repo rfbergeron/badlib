@@ -35,6 +35,7 @@ int map_init(Map *map, size_t size, BlibDestroyer key_dest,
 
 int map_destroy(Map *map) {
   if (!map) return 1;
+  if (!map->buckets) return 1;
 
   size_t i;
   for (i = 0; i < map->size; ++i) {

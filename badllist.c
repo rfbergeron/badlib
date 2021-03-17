@@ -72,7 +72,7 @@ int llist_destroy(LinkedList *list) {
   while (!llist_empty(list)) {
     void *to_free = llist_pop_front(list);
     int status = 0;
-    if (list->data_destroy != NULL) (*list->data_destroy)(to_free);
+    if (list->data_destroy) (list->data_destroy)(to_free);
   }
   free(list->anchor);
   return 0;
@@ -156,6 +156,15 @@ int llist_delete(LinkedList *list, size_t index) {
   }
   Node *target = node_at(list, index);
   return node_destroy(list, target, NULL);
+}
+
+void llist_foreach(LinkedList *list, void(*fn)(void* data, size_t index)) {
+    if (!list || !fn) return;
+    size_t i;
+    for (i = 0; i < list->size; ++i) {
+        void *element = llist_get(list, i);
+        (fn)(element, i);
+    }
 }
 
 /* status functions */
