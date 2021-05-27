@@ -33,8 +33,11 @@ void *llist_back(LinkedList *list);
 void *llist_get(LinkedList *list, size_t index);
 int llist_insert(LinkedList *list, void *element, size_t index);
 int llist_delete(LinkedList *list, size_t index);
+void *llist_extract(LinkedList *list, size_t index);
+size_t llist_find(LinkedList *list, void *target);
+size_t llist_rfind(LinkedList *list, void *target);
 
-void llist_foreach(LinkedList *list, void(*fn)(void* data, size_t index));
+void llist_foreach(LinkedList *list, void(*fn)(void*));
 size_t llist_size(LinkedList *list);
 int llist_empty(LinkedList *list);
 #endif

@@ -43,6 +43,7 @@ int alist_destroy(ArrayList *list) {
     }
   }
   free(list->data);
+  return 0;
 }
 
 void *alist_get(ArrayList *list, size_t index) {
@@ -95,6 +96,50 @@ int alist_delete(ArrayList *list, size_t index) {
   return 0;
 }
 
+size_t alist_find(ArrayList *list, void *target) {
+  if (!alist_valid(list)) {
+    return 1;
+  } else if (!target) {
+    return 1;
+  }
+
+  size_t i;
+  for (i = 0; i < alist_size(list); ++i) {
+    void *element = list->data[i];
+    if ((list->data_compare)(target, element)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+size_t alist_rfind(ArrayList *list, void *target) {
+  if (!alist_valid(list)) {
+    return 1;
+  } else if (!target) {
+    return 1;
+  }
+
+  size_t i;
+  for (i = alist_size(list); i >= 0; --i) {
+    void *element = list->data[i];
+    if ((list->data_compare)(target, element)) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+void alist_foreach(ArrayList *list, void(*fn)(void*)) {
+    if (!alist_valid(list) || !fn) return;
+    size_t i;
+    for (i = 0; i < list->size; ++i) {
+        void *element = alist_get(list, i);
+        (fn)(element);
+    }
+}
+
+
 int alist_resize(ArrayList *list, size_t size) {
   if (!alist_valid(list)) {
     return 1;
@@ -107,14 +152,15 @@ int alist_resize(ArrayList *list, size_t size) {
     list->size = size;
   } else {
     size_t to_alloc = 1;
-    while (to_alloc < size) to_alloc = to_alloc * 2;
-    void **new_data = malloc(to_alloc * sizeof(void *));
+    while (to_alloc < size) to_alloc *= 2;
+    void **new_data = calloc(to_alloc, sizeof(void *));
     memcpy(new_data, list->data, list->size * sizeof(void *));
     free(list->data);
     list->data = new_data;
     list->size = size;
     list->max_size = to_alloc;
   }
+
   return 0;
 }
 

@@ -21,8 +21,10 @@ int alist_destroy(ArrayList *list);
 void *alist_get(ArrayList *list, size_t index);
 int alist_insert(ArrayList *list, void *data, size_t index);
 int alist_delete(ArrayList *list, size_t index);
-
+size_t alist_find(ArrayList *list, void *target);
+size_t alist_rfind(ArrayList *list, void *target);
 int alist_resize(ArrayList *list, size_t size);
+void alist_foreach(ArrayList *list, void(*fn)(void*));
 
 size_t alist_size(ArrayList *list);
 int alist_empty(ArrayList *list);

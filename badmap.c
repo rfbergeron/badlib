@@ -51,6 +51,8 @@ int map_destroy(Map *map) {
 }
 
 void *map_get(Map *map, void *key, size_t key_size) {
+  if (!map || !(map->buckets) || !key) return NULL;
+
   size_t hash = 0;
   MurmurHash3_x86_32(key, key_size, 0, &hash);
   hash = hash % map->size;
@@ -66,11 +68,8 @@ void *map_get(Map *map, void *key, size_t key_size) {
 }
 
 int map_insert(Map *map, void *key, size_t key_size, void *value) {
-  if (!map) {
-    return 1;
-  } else if (!(map->buckets)) {
-    return 1;
-  }
+  if (!map || !(map->buckets) || !key) return 1;
+
   size_t hash = 0;
   MurmurHash3_x86_32(key, key_size, 0, &hash);
   hash = hash % map->size;
@@ -104,6 +103,8 @@ int map_insert(Map *map, void *key, size_t key_size, void *value) {
 }
 
 int map_delete(Map *map, void *key, size_t key_size) {
+  if (!map || !(map->buckets) || !key) return 1;
+
   size_t hash = 0;
   MurmurHash3_x86_32(key, key_size, 0, &hash);
   hash = hash % map->size;
@@ -128,14 +129,57 @@ int map_delete(Map *map, void *key, size_t key_size) {
   return 0;
 }
 
-void map_foreach(Map *map, void (*fn)(void *, void *, size_t, size_t)) {
+int map_find(Map *map, void *key, size_t key_size, size_t *out) {
+    if (!map || !(map->buckets) || !key || !out) return 0;
+
+    size_t hash = 0;
+    MurmurHash3_x86_32(key, key_size, 0, &hash);
+    hash = hash % map->size;
+    Bucket *current = map->buckets[hash].next;
+
+    size_t i = 0;
+    while (current != (map->buckets + hash) &&
+           !((map->key_compare)(key, current->key))) {
+      current = current->next;
+      ++i;
+    }
+
+    out[0] = hash;
+    out[1] = i;
+    return (map->key_compare)(key, current->key);
+}
+
+void map_foreach_key(Map *map, void (*fn)(void *)){
   if (!map || !fn) return;
   size_t i;
   for (i = 0; i < map->size; ++i) {
-    size_t j = 0;
     Bucket *current = map->buckets[i].next;
     while (current != map->buckets + i) {
-      (fn)(current->key, current->value, i, j++);
+      (fn)(current->key);
+      current = current->next;
+    }
+  }
+}
+
+void map_foreach_value(Map *map, void (*fn)(void *)){
+  if (!map || !fn) return;
+  size_t i;
+  for (i = 0; i < map->size; ++i) {
+    Bucket *current = map->buckets[i].next;
+    while (current != map->buckets + i) {
+      (fn)(current->value);
+      current = current->next;
+    }
+  }
+}
+
+void map_foreach_pair(Map *map, void (*fn)(void *, void *)) {
+  if (!map || !fn) return;
+  size_t i;
+  for (i = 0; i < map->size; ++i) {
+    Bucket *current = map->buckets[i].next;
+    while (current != map->buckets + i) {
+      (fn)(current->key, current->value);
       current = current->next;
     }
   }

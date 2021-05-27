@@ -139,7 +139,7 @@ void *llist_get(LinkedList *list, size_t index) {
 int llist_insert(LinkedList *list, void *element, size_t index) {
   if (!llist_valid(list)) {
     return 1;
-  } else if (index >= list->size) {
+  } else if (index >= (list->size + 1)) { /* allow inserting at the very end */
     list->last_status = BLIB_OUT_OF_BOUNDS;
     return 1;
   }
@@ -158,16 +158,48 @@ int llist_delete(LinkedList *list, size_t index) {
   return node_destroy(list, target, NULL);
 }
 
-void llist_foreach(LinkedList *list, void(*fn)(void* data, size_t index)) {
-    if (!list || !fn) return;
+void *llist_extract(LinkedList *list, size_t index) {
+  if (!llist_valid(list)) {
+    return NULL;
+  } else if (index >= list->size) {
+    list->last_status = BLIB_OUT_OF_BOUNDS;
+    return NULL;
+  }
+  Node *target = node_at(list, index);
+  void *ret = NULL;
+  node_destroy(list, target, &ret);
+  return ret;
+}
+
+size_t llist_find(LinkedList *list, void *target) {
+  if (!llist_valid(list) || !target) return -1;
+  size_t i;
+  for (i = 0; i < list->size; ++i) {
+    void *element = llist_get(list, i);
+    if ((list->data_compare)(target, element)) return i;
+  }
+  return -1;
+}
+
+size_t llist_rfind(LinkedList *list, void *target) {
+  if (!llist_valid(list) || !target) return -1;
+  size_t i;
+  for (i = llist_size(list); i >= 0; --i) {
+    void *element = llist_get(list, i);
+    if ((list->data_compare)(target, element)) return i;
+  }
+  return -1;
+}
+
+void llist_foreach(LinkedList *list, void(*fn)(void*)) {
+    if (!llist_valid(list) || !fn) return;
     size_t i;
     for (i = 0; i < list->size; ++i) {
         void *element = llist_get(list, i);
-        (fn)(element, i);
+        (fn)(element);
     }
 }
 
 /* status functions */
 size_t llist_size(LinkedList *list) { return list->size; }
-
 int llist_empty(LinkedList *list) { return list->size == 0; }

@@ -30,8 +30,11 @@ int map_destroy(Map *map);
 void *map_get(Map *map, void *key, size_t key_size);
 int map_insert(Map *map, void *key, size_t key_size, void *value);
 int map_delete(Map *map, void *key, size_t key_size);
+int map_find(Map *map, void *key, size_t key_size, size_t *out);
 
-void map_foreach(Map *map, void (*fn)(void *, void *, size_t, size_t));
+void map_foreach_key(Map *map, void (*fn)(void *));
+void map_foreach_value(Map *map, void (*fn)(void *));
+void map_foreach_pair(Map *map, void (*fn)(void *, void *));
 size_t map_size(Map *map);
 int map_empty(Map *map);
 #endif
