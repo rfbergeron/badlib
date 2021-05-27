@@ -130,26 +130,26 @@ int map_delete(Map *map, void *key, size_t key_size) {
 }
 
 int map_find(Map *map, void *key, size_t key_size, size_t *out) {
-    if (!map || !(map->buckets) || !key || !out) return 0;
+  if (!map || !(map->buckets) || !key || !out) return 0;
 
-    size_t hash = 0;
-    MurmurHash3_x86_32(key, key_size, 0, &hash);
-    hash = hash % map->size;
-    Bucket *current = map->buckets[hash].next;
+  size_t hash = 0;
+  MurmurHash3_x86_32(key, key_size, 0, &hash);
+  hash = hash % map->size;
+  Bucket *current = map->buckets[hash].next;
 
-    size_t i = 0;
-    while (current != (map->buckets + hash) &&
-           !((map->key_compare)(key, current->key))) {
-      current = current->next;
-      ++i;
-    }
+  size_t i = 0;
+  while (current != (map->buckets + hash) &&
+         !((map->key_compare)(key, current->key))) {
+    current = current->next;
+    ++i;
+  }
 
-    out[0] = hash;
-    out[1] = i;
-    return (map->key_compare)(key, current->key);
+  out[0] = hash;
+  out[1] = i;
+  return (map->key_compare)(key, current->key);
 }
 
-void map_foreach_key(Map *map, void (*fn)(void *)){
+void map_foreach_key(Map *map, void (*fn)(void *)) {
   if (!map || !fn) return;
   size_t i;
   for (i = 0; i < map->size; ++i) {
@@ -161,7 +161,7 @@ void map_foreach_key(Map *map, void (*fn)(void *)){
   }
 }
 
-void map_foreach_value(Map *map, void (*fn)(void *)){
+void map_foreach_value(Map *map, void (*fn)(void *)) {
   if (!map || !fn) return;
   size_t i;
   for (i = 0; i < map->size; ++i) {

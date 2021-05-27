@@ -191,13 +191,13 @@ size_t llist_rfind(LinkedList *list, void *target) {
   return -1;
 }
 
-void llist_foreach(LinkedList *list, void(*fn)(void*)) {
-    if (!llist_valid(list) || !fn) return;
-    size_t i;
-    for (i = 0; i < list->size; ++i) {
-        void *element = llist_get(list, i);
-        (fn)(element);
-    }
+void llist_foreach(LinkedList *list, void (*fn)(void *)) {
+  if (!llist_valid(list) || !fn) return;
+  size_t i;
+  for (i = 0; i < list->size; ++i) {
+    void *element = llist_get(list, i);
+    (fn)(element);
+  }
 }
 
 /* status functions */

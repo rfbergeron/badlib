@@ -130,15 +130,14 @@ size_t alist_rfind(ArrayList *list, void *target) {
   return -1;
 }
 
-void alist_foreach(ArrayList *list, void(*fn)(void*)) {
-    if (!alist_valid(list) || !fn) return;
-    size_t i;
-    for (i = 0; i < list->size; ++i) {
-        void *element = alist_get(list, i);
-        (fn)(element);
-    }
+void alist_foreach(ArrayList *list, void (*fn)(void *)) {
+  if (!alist_valid(list) || !fn) return;
+  size_t i;
+  for (i = 0; i < list->size; ++i) {
+    void *element = alist_get(list, i);
+    (fn)(element);
+  }
 }
-
 
 int alist_resize(ArrayList *list, size_t size) {
   if (!alist_valid(list)) {
