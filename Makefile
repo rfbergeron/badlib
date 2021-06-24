@@ -13,9 +13,9 @@ GMAKE = ${MAKE} --no-print-directory
 # name of the compiled executable
 EXECNAME = badlib
 # .c source files
-SRC = badmap.c badllist.c badalist.c
+SRC = badmap.c badllist.c badalist.c badset.c
 # .h header files
-HDR = badmap.h badllist.h badalist.h badlib.h
+HDR = badmap.h badllist.h badalist.h badset.h badlib.h
 # library source files
 LIBSRC = murmur3.c
 # library header files

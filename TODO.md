@@ -1,21 +1,23 @@
 This will be a simple generic data structures library written in C for use with
 my other garbage programs.
 
-# Structures to implement:
-- (Doubly?) Linked list/Deque?
-- Resizeable array
-- Heap
-- HashMap? (will most likely end up using farmhash/cityhash)
+# Structures implemented:
+- doubly linked list/deque
+- resizeable array
+- unordered map
+- unordered set
 
 # Actual TODO
-- return a more meaningful value on error than NULL so that the user can
-  distinguish between when they are seeing a NULL value that they inserted
-  and an error indicator
+- uniform return values for errors/other circumstances (return `NULL` or
+  `-1` or similar and set an error field in the data structure if something
+  went wrong)
 - have makefile compile murmur in a more normal way, via recursive call
 - proper unit testing for map and arraylist
-- maybe change format of library functions so that they always return an error
-  code?
 - macroify structures
+- change naming of variables referring to current number of elements and
+  maxmimum number of elements in the structure to length and capacity, like
+  golang does
+- remove trivial, unnecessary functions, like `X_size`
 
 # Pointer arguments vs. value arguments and allocation of space
 Requiring the user to allocate space makes it clearer who is responsible for

@@ -4,15 +4,15 @@
 
 #include "badlib.h"
 
-typedef struct bucket {
+typedef struct map_bucket {
   void *key;
   void *value;
   size_t key_size;
-  struct bucket *next;
-} Bucket;
+  struct map_bucket *next;
+} MapBucket;
 
 typedef struct map {
-  Bucket *buckets;
+  MapBucket *buckets;
   size_t size;
   size_t count;
   void *default_key;
