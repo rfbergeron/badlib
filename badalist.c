@@ -6,12 +6,14 @@
 
 #include "badlib.h"
 
+static BlibError last_status = BLIB_SUCCESS;
+
 /* internal functions */
-int alist_valid(ArrayList *list) {
+int alist_valid(const ArrayList *list) {
   if (!list) {
     return 0;
   } else if (!(list->data) || !(list->size > 0) || !(list->max_size > 0)) {
-    list->last_status = BLIB_INVALID_STRUCT;
+    last_status = BLIB_INVALID_STRUCT;
     return 0;
   } else {
     return 1;
@@ -30,7 +32,7 @@ int alist_init(ArrayList *list, size_t size, BlibDestroyer dest,
   list->count = 0;
   list->data_destroy = dest;
   list->data_compare = comp;
-  list->last_status = BLIB_SUCCESS;
+  last_status = BLIB_SUCCESS;
   return 0;
 }
 
@@ -46,14 +48,14 @@ int alist_destroy(ArrayList *list) {
   return 0;
 }
 
-void *alist_get(ArrayList *list, size_t index) {
+void *alist_get(const ArrayList *list, size_t index) {
   if (!alist_valid(list)) {
     return NULL;
   } else if (index >= list->size) {
-    list->last_status = BLIB_OUT_OF_BOUNDS;
+    last_status = BLIB_OUT_OF_BOUNDS;
     return NULL;
   } else if (!(list->data[index])) {
-    list->last_status = W_BLIB_NOT_FOUND;
+    last_status = W_BLIB_NOT_FOUND;
     return NULL;
   }
 
@@ -64,7 +66,7 @@ int alist_insert(ArrayList *list, void *element, size_t index) {
   if (!alist_valid(list)) {
     return 1;
   } else if (index >= list->size) {
-    list->last_status = BLIB_OUT_OF_BOUNDS;
+    last_status = BLIB_OUT_OF_BOUNDS;
     return 1;
   }
 
@@ -83,10 +85,10 @@ int alist_delete(ArrayList *list, size_t index) {
   if (!alist_valid(list)) {
     return 1;
   } else if (index >= list->size) {
-    list->last_status = BLIB_OUT_OF_BOUNDS;
+    last_status = BLIB_OUT_OF_BOUNDS;
     return 1;
   } else if (!(list->data[index])) {
-    list->last_status = W_BLIB_NOT_FOUND;
+    last_status = W_BLIB_NOT_FOUND;
     return 1;
   }
 
@@ -96,7 +98,7 @@ int alist_delete(ArrayList *list, size_t index) {
   return 0;
 }
 
-size_t alist_find(ArrayList *list, void *target) {
+size_t alist_find(const ArrayList *list, void *target) {
   if (!alist_valid(list)) {
     return 1;
   } else if (!target) {
@@ -113,7 +115,7 @@ size_t alist_find(ArrayList *list, void *target) {
   return -1;
 }
 
-size_t alist_rfind(ArrayList *list, void *target) {
+size_t alist_rfind(const ArrayList *list, void *target) {
   if (!alist_valid(list)) {
     return 1;
   } else if (!target) {
@@ -143,7 +145,7 @@ int alist_resize(ArrayList *list, size_t size) {
   if (!alist_valid(list)) {
     return 1;
   } else if (size < 1) {
-    list->last_status = BLIB_INVALID_SIZE;
+    last_status = BLIB_INVALID_SIZE;
     return 1;
   }
 
@@ -163,5 +165,9 @@ int alist_resize(ArrayList *list, size_t size) {
   return 0;
 }
 
-size_t alist_size(ArrayList *list) { return list->size; }
-int alist_empty(ArrayList *list) { return list->count == 0; }
+size_t alist_size(const ArrayList *list) { return list->size; }
+int alist_empty(const ArrayList *list) { return list->count == 0; }
+int alist_status(const ArrayList *list) {
+    /* TODO(Robert): more robust (threadsafe?) way of getting status */
+    return last_status;
+}

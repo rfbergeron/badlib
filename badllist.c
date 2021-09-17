@@ -5,12 +5,14 @@
 
 #include "badlib.h"
 
+static BlibError last_status = BLIB_SUCCESS;
+
 /* internal functions */
-static int llist_valid(LinkedList *list) {
+static int llist_valid(const LinkedList *list) {
   if (!list) {
     return 0;
   } else if (!(list->anchor)) {
-    list->last_status = BLIB_INVALID_STRUCT;
+    last_status = BLIB_INVALID_STRUCT;
     return 0;
   }
   return 1;
@@ -39,7 +41,7 @@ static int node_destroy(LinkedList *list, Node *node, void **wants_data) {
   return 0;
 }
 
-static Node *node_at(LinkedList *list, size_t index) {
+static Node *node_at(const LinkedList *list, size_t index) {
   size_t current_index = 0;
   Node *current_node = list->anchor->next;
   while (current_index < index) {
@@ -55,6 +57,7 @@ int llist_init(LinkedList *list, BlibDestroyer dest, BlibComparator comp) {
   if (list->anchor == NULL) return 1;
   list->anchor->next = list->anchor;
   list->anchor->prev = list->anchor;
+  list->anchor->data = NULL;
   list->data_destroy = dest;
   list->data_compare = comp;
   list->size = 0;
@@ -65,16 +68,32 @@ int llist_destroy(LinkedList *list) {
   if (list == NULL)
     return 1;
   else if (list->anchor == NULL) {
-    list->last_status = BLIB_INVALID_STRUCT;
+    last_status = BLIB_INVALID_STRUCT;
     return 1;
   }
 
-  while (!llist_empty(list)) {
-    void *to_free = llist_pop_front(list);
-    int status = 0;
-    if (list->data_destroy) (list->data_destroy)(to_free);
+  while (list->anchor->next != list->anchor) {
+    node_destroy(list, list->anchor->next, NULL);
   }
   free(list->anchor);
+  /* paranoid free */
+  list->anchor = NULL;
+  return 0;
+}
+
+/* NOTE: this is a shallow copy; freeing the list and its nodes is fine, but
+ * not the elements, which is why the destination's destroyer is NULL
+ */
+int llist_copy(LinkedList *dest, const LinkedList *src) {
+  if (!dest || !llist_valid(src)) return -1;
+  int status = llist_init(dest, NULL, src->data_compare);
+  if (status) return status;
+
+  size_t i;
+  for (i = 0; i < llist_size(src); ++i) {
+    int status = llist_push_back(dest, llist_get(src, i));
+    if (status) return status;
+  }
   return 0;
 }
 
@@ -88,7 +107,7 @@ void *llist_pop_front(LinkedList *list) {
   if (!llist_valid(list)) {
     return NULL;
   } else if (llist_empty(list)) {
-    list->last_status = BLIB_EMPTY;
+    last_status = BLIB_EMPTY;
     return NULL;
   }
   void *ret = NULL;
@@ -96,7 +115,7 @@ void *llist_pop_front(LinkedList *list) {
   return ret;
 }
 
-void *llist_front(LinkedList *list) {
+void *llist_front(const LinkedList *list) {
   if (!llist_valid(list)) return NULL;
   return list->anchor->next->data;
 }
@@ -111,7 +130,7 @@ void *llist_pop_back(LinkedList *list) {
   if (!llist_valid(list)) {
     return NULL;
   } else if (llist_empty(list)) {
-    list->last_status = BLIB_EMPTY;
+    last_status = BLIB_EMPTY;
     return NULL;
   }
   void *ret = NULL;
@@ -119,17 +138,17 @@ void *llist_pop_back(LinkedList *list) {
   return ret;
 }
 
-void *llist_back(LinkedList *list) {
+void *llist_back(const LinkedList *list) {
   if (!llist_valid(list)) return NULL;
   return list->anchor->prev->data;
 }
 
 /* array functions */
-void *llist_get(LinkedList *list, size_t index) {
+void *llist_get(const LinkedList *list, size_t index) {
   if (!llist_valid(list)) {
     return NULL;
   } else if (index >= list->size) {
-    list->last_status = BLIB_OUT_OF_BOUNDS;
+    last_status = BLIB_OUT_OF_BOUNDS;
     return NULL;
   }
   Node *target = node_at(list, index);
@@ -140,7 +159,7 @@ int llist_insert(LinkedList *list, void *element, size_t index) {
   if (!llist_valid(list)) {
     return 1;
   } else if (index >= (list->size + 1)) { /* allow inserting at the very end */
-    list->last_status = BLIB_OUT_OF_BOUNDS;
+    last_status = BLIB_OUT_OF_BOUNDS;
     return 1;
   }
   Node *target = node_at(list, index);
@@ -151,7 +170,7 @@ int llist_delete(LinkedList *list, size_t index) {
   if (!llist_valid(list)) {
     return 1;
   } else if (index >= list->size) {
-    list->last_status = BLIB_OUT_OF_BOUNDS;
+    last_status = BLIB_OUT_OF_BOUNDS;
     return 1;
   }
   Node *target = node_at(list, index);
@@ -162,7 +181,7 @@ void *llist_extract(LinkedList *list, size_t index) {
   if (!llist_valid(list)) {
     return NULL;
   } else if (index >= list->size) {
-    list->last_status = BLIB_OUT_OF_BOUNDS;
+    last_status = BLIB_OUT_OF_BOUNDS;
     return NULL;
   }
   Node *target = node_at(list, index);
@@ -171,7 +190,7 @@ void *llist_extract(LinkedList *list, size_t index) {
   return ret;
 }
 
-size_t llist_find(LinkedList *list, void *target) {
+size_t llist_find(const LinkedList *list, void *target) {
   if (!llist_valid(list) || !target) return -1;
   size_t i;
   for (i = 0; i < list->size; ++i) {
@@ -181,7 +200,7 @@ size_t llist_find(LinkedList *list, void *target) {
   return -1;
 }
 
-size_t llist_rfind(LinkedList *list, void *target) {
+size_t llist_rfind(const LinkedList *list, void *target) {
   if (!llist_valid(list) || !target) return -1;
   size_t i;
   for (i = llist_size(list); i >= 0; --i) {
@@ -201,5 +220,10 @@ void llist_foreach(LinkedList *list, void (*fn)(void *)) {
 }
 
 /* status functions */
-size_t llist_size(LinkedList *list) { return list->size; }
-int llist_empty(LinkedList *list) { return list->size == 0; }
+size_t llist_size(const LinkedList *list) { return list->size; }
+int llist_empty(const LinkedList *list) { return list->size == 0; }
+int llist_status(const LinkedList *list) {
+  /* TODO(Robert): more robust way of storing status */
+  return last_status;
+}
+

@@ -1,11 +1,13 @@
 This will be a simple generic data structures library written in C for use with
 my other garbage programs.
 
-# Structures implemented:
-- doubly linked list/deque
-- resizeable array
-- unordered map
-- unordered set
+# Structures to implement:
+- Doubly Linked List, which will also serve as a stack and deque
+- Resizeable array
+- Heap
+- Map
+- Set
+- Weight-Balanced Binary Tree, which will serve as a binary tree and ordered map/set
 
 # Actual TODO
 - uniform return values for errors/other circumstances (return `NULL` or
@@ -18,6 +20,18 @@ my other garbage programs.
   maxmimum number of elements in the structure to length and capacity, like
   golang does
 - remove trivial, unnecessary functions, like `X_size`
+
+# Variadic versions of foreach functions
+It may be convenient to have variadic versions of each of the foreach functions,
+which take a variadic function as an argument instead of one with a fixed single
+argument.
+
+This way, an arbitrary number of data structures can be composed together using
+a function, such as adding/multiplying/etc. elements at the same index.
+
+However, this would make the foreach function less flexible. Functions would
+have to be purpose-written to be supplied as an argument to the foreach
+functions, instead of the simpler current implementation.
 
 # Pointer arguments vs. value arguments and allocation of space
 Requiring the user to allocate space makes it clearer who is responsible for
@@ -74,84 +88,3 @@ present in the status field of the linked list.
 ### LIST_NULL
 ### LIST_NOT_FOUND
 ### LIST_EMPTY
-
-## Function Definitions
-
-### `llist_init`
-Takes a pointer to an uninitialized linked list as an argument. Allocates an
-anchor for this list.
-
-### `llist_destroy`
-Takes a pointer to an initialized linked list as an argument. Frees the memory
-for the anchor and all elements still in the list. Note that it does not free
-the `void *data` fields of the stored elements.
-
-### `llist_push`
-Takes a pointer to an llist and a `void *`. Prepends the element to the list.
-Returns 0 on success and 1 otherwise.
-
-### `llist_pop`
-Takes a pointer to a llist. Removes the element at the beginning of the list
-and returns it.
-
-### `llist_peek`
-Takes a pointer to a llist. Returns the element at the beginning of the list.
-
-### `llist_push_back`
-Takes a pointer to a llist and a `void *`. Appends the element to the end of the
-llist. Returns 0 if the operation was successful and 1 otherwise.
-
-### `llist_pop_back`
-Takes a pointer to a llist. Removes the element at the end of the list and
-returns it.
-
-### `llist_peek_back`
-Takes a pointer to a llist. Returns the element at the end of the list.
-
-### `llist_clear`
-Takes a pointer to a llist and an 
-
-### `llist_empty`
-Takes a pointer to a llist. Returns 1 if the list is empty and 0 otherwise.
-
-### `llist_size`
-Takes a pointer to a llist. Returns the size of the list.
-
-# Node
-The node structure will be used to hold the elements of a Linked List. Since it
-is not a standalone structure, there are no functions dedicated to operating on
-nodes.
-
-## Structure Definition
-Fields will include:
-- pointer to next node
-- pointer to previous node
-
-# ArrayList
-
-## Structure Definition
-Fields:
-- pointer to data
-- currently allocated space
-- user specified array size
-
-## Function Definitions
-
-# Map
-
-## Architecture
-The map's primary structure will be a dynamically allocated array of buckets.
-Inserted values with different keys that map to the same slot will be appendend
-to each other in a manner similar to a linked list. 
-
-Since each node is going to be a linked list, it should have a structure similar
-to the deque data structure, where there is an anchor node that does not store
-anything but merely functions as a placeholder. The true head of the linked list
-will be the node after this one. The node at the end of the list will point back
-to the anchor; this means that, when the bucket is empty, the anchor will point to
-itself.
-
-Since the anchor node will be present until the map is destroyed, we have the
-following guarantees:
-1. every bucket in the chain will have a previous bucket
-2. every bucket in the chain will have a succesor bucket

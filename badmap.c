@@ -4,18 +4,20 @@
 
 #include "murmur3/murmur3.h"
 
+static BlibError last_status = BLIB_SUCCESS;
+
 /* simple comparison function used as a placeholder when the user does not
  * provide one of their own.
  */
 int default_comp(void *k1, void *k2) { return k1 == k2; }
 
-int map_init(Map *map, size_t size, BlibDestroyer key_dest,
+int map_init(Map *map, size_t bucket_count, BlibDestroyer key_dest,
              BlibDestroyer value_dest, BlibComparator key_comp) {
   if (!map) return 1;
 
-  map->buckets = malloc(size * sizeof(Bucket));
+  map->buckets = malloc(bucket_count * sizeof(MapBucket));
   size_t i;
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < bucket_count; ++i) {
     /* As a consequence of using NULL as the key for the anchors, the user may
      * not use NULL as a key for any of their values. While this is less than
      * ideal, having NULL keys does seem a little silly to me.
@@ -25,8 +27,8 @@ int map_init(Map *map, size_t size, BlibDestroyer key_dest,
     map->buckets[i].next = (map->buckets + i);
   }
 
-  map->size = size;
-  map->count = 0;
+  map->entry_count = 0;
+  map->bucket_count = bucket_count;
   map->key_destroy = key_dest;
   map->value_destroy = value_dest;
   map->key_compare = key_comp ? key_comp : default_comp;
@@ -38,25 +40,27 @@ int map_destroy(Map *map) {
   if (!map->buckets) return 1;
 
   size_t i;
-  for (i = 0; i < map->size; ++i) {
+  for (i = 0; i < map->bucket_count; ++i) {
     while (map->buckets[i].next != (map->buckets + i)) {
-      Bucket *to_free = map->buckets[i].next;
+      MapBucket *to_free = map->buckets[i].next;
       int status = map_delete(map, to_free->key, to_free->key_size);
       if (status) return status;
     }
   }
 
   free(map->buckets);
+  /* paranoid free */
+  map->buckets = NULL;
   return 0;
 }
 
-void *map_get(Map *map, void *key, size_t key_size) {
+void *map_get(const Map *map, void *key, size_t key_size) {
   if (!map || !(map->buckets) || !key) return NULL;
 
   size_t hash = 0;
   MurmurHash3_x86_32(key, key_size, 0, &hash);
-  hash = hash % map->size;
-  Bucket *current = map->buckets[hash].next;
+  hash = hash % map->bucket_count;
+  MapBucket *current = map->buckets[hash].next;
 
   while (current != (map->buckets + hash) &&
          !((map->key_compare)(key, current->key))) {
@@ -72,14 +76,14 @@ int map_insert(Map *map, void *key, size_t key_size, void *value) {
 
   size_t hash = 0;
   MurmurHash3_x86_32(key, key_size, 0, &hash);
-  hash = hash % map->size;
+  hash = hash % map->bucket_count;
 
   if ((map->key_compare)(map->buckets[hash].key, key)) {
     /* the anchor's value may not be modified */
     return 1;
   }
 
-  Bucket *prev = map->buckets + hash;
+  MapBucket *prev = map->buckets + hash;
 
   while (prev->next != (map->buckets + hash) &&
          !(map->key_compare)(prev->next->key, key))
@@ -91,12 +95,13 @@ int map_insert(Map *map, void *key, size_t key_size, void *value) {
     prev->next->value = value;
   } else {
     /* insert new bucket */
-    Bucket *new_bucket = malloc(sizeof(Bucket));
+    MapBucket *new_bucket = malloc(sizeof(MapBucket));
     new_bucket->key = key;
     new_bucket->value = value;
     new_bucket->key_size = key_size;
     new_bucket->next = prev->next;
     prev->next = new_bucket;
+    ++(map->entry_count);
   }
 
   return 0;
@@ -107,9 +112,9 @@ int map_delete(Map *map, void *key, size_t key_size) {
 
   size_t hash = 0;
   MurmurHash3_x86_32(key, key_size, 0, &hash);
-  hash = hash % map->size;
+  hash = hash % map->bucket_count;
 
-  Bucket *prev = map->buckets + hash;
+  MapBucket *prev = map->buckets + hash;
   while (prev->next != (map->buckets + hash) &&
          !(map->key_compare)(prev->next->key, key))
     prev = prev->next;
@@ -118,24 +123,25 @@ int map_delete(Map *map, void *key, size_t key_size) {
     /* key not found or matches anchor; do not delete anchor */
     return 1;
   } else {
-    Bucket *to_free = prev->next;
+    MapBucket *to_free = prev->next;
     prev->next = to_free->next;
 
     if (map->key_destroy) (map->key_destroy)(to_free->key);
     if (map->value_destroy) (map->value_destroy)(to_free->value);
 
     free(to_free);
+    --(map->entry_count);
   }
   return 0;
 }
 
-int map_find(Map *map, void *key, size_t key_size, size_t *out) {
+int map_find(const Map *map, void *key, size_t key_size, size_t *out) {
   if (!map || !(map->buckets) || !key || !out) return 0;
 
   size_t hash = 0;
   MurmurHash3_x86_32(key, key_size, 0, &hash);
-  hash = hash % map->size;
-  Bucket *current = map->buckets[hash].next;
+  hash = hash % map->bucket_count;
+  MapBucket *current = map->buckets[hash].next;
 
   size_t i = 0;
   while (current != (map->buckets + hash) &&
@@ -149,11 +155,37 @@ int map_find(Map *map, void *key, size_t key_size, size_t *out) {
   return (map->key_compare)(key, current->key);
 }
 
+int map_keys(const Map *map, LinkedList *out) {
+  if (!map || !out) return 1;
+  size_t i;
+  for (i = 0; i < map_size(map); ++i) {
+    MapBucket *current = map->buckets[i].next;
+    while (current != (map->buckets + i)) {
+      llist_push_back(out, current->key);
+      current = current->next;
+    }
+  }
+  return 0;
+}
+
+int map_values(const Map *map, LinkedList *out) {
+  if (!map || !out) return 1;
+  size_t i;
+  for (i = 0; i < map_size(map); ++i) {
+    MapBucket *current = map->buckets[i].next;
+    while (current != (map->buckets + i)) {
+      llist_push_back(out, current->value);
+      current = current->next;
+    }
+  }
+  return 0;
+}
+
 void map_foreach_key(Map *map, void (*fn)(void *)) {
   if (!map || !fn) return;
   size_t i;
-  for (i = 0; i < map->size; ++i) {
-    Bucket *current = map->buckets[i].next;
+  for (i = 0; i < map->bucket_count; ++i) {
+    MapBucket *current = map->buckets[i].next;
     while (current != map->buckets + i) {
       (fn)(current->key);
       current = current->next;
@@ -164,8 +196,8 @@ void map_foreach_key(Map *map, void (*fn)(void *)) {
 void map_foreach_value(Map *map, void (*fn)(void *)) {
   if (!map || !fn) return;
   size_t i;
-  for (i = 0; i < map->size; ++i) {
-    Bucket *current = map->buckets[i].next;
+  for (i = 0; i < map->bucket_count; ++i) {
+    MapBucket *current = map->buckets[i].next;
     while (current != map->buckets + i) {
       (fn)(current->value);
       current = current->next;
@@ -176,8 +208,8 @@ void map_foreach_value(Map *map, void (*fn)(void *)) {
 void map_foreach_pair(Map *map, void (*fn)(void *, void *)) {
   if (!map || !fn) return;
   size_t i;
-  for (i = 0; i < map->size; ++i) {
-    Bucket *current = map->buckets[i].next;
+  for (i = 0; i < map->bucket_count; ++i) {
+    MapBucket *current = map->buckets[i].next;
     while (current != map->buckets + i) {
       (fn)(current->key, current->value);
       current = current->next;
@@ -185,5 +217,9 @@ void map_foreach_pair(Map *map, void (*fn)(void *, void *)) {
   }
 }
 
-size_t map_size(Map *map) { return map->size; }
-int map_empty(Map *map) { return map->count; }
+size_t map_size(const Map *map) { return map->entry_count; }
+int map_empty(const Map *map) { return map->entry_count == 0; }
+int map_status(const Map *map) {
+    /* TODO(Robert): handle this better */
+    return last_status;
+}

@@ -109,7 +109,7 @@ int clean_alist_suite(void) {
 
 void test_alist_defaults(void) {
   CU_ASSERT_EQUAL(0, arraylist->count);
-  CU_ASSERT_EQUAL(BLIB_SUCCESS, arraylist->last_status);
+  CU_ASSERT_EQUAL(BLIB_SUCCESS, alist_status(arraylist));
 }
 
 void test_alist(void) {
@@ -130,9 +130,9 @@ void test_alist_errors(void) {
   CU_ASSERT(1 == alist_insert(arraylist, NULL, 11));
   CU_ASSERT(1 == alist_resize(arraylist, 0));
   CU_ASSERT_PTR_NULL(alist_get(arraylist, 0));
-  CU_ASSERT(W_BLIB_NOT_FOUND == arraylist->last_status);
+  CU_ASSERT(W_BLIB_NOT_FOUND == alist_status(arraylist));
   CU_ASSERT(1 == alist_delete(arraylist, 0));
-  CU_ASSERT(W_BLIB_NOT_FOUND == arraylist->last_status);
+  CU_ASSERT(W_BLIB_NOT_FOUND == alist_status(arraylist));
 }
 
 int init_map_suite(void) {
