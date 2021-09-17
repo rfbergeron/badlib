@@ -39,6 +39,7 @@ void *llist_extract(LinkedList *list, size_t index);
 size_t llist_find(const LinkedList *list, void *target);
 size_t llist_rfind(const LinkedList *list, void *target);
 void llist_foreach(LinkedList *list, void (*fn)(void *));
+int llist_sort(LinkedList *list, int (*compare)(void*,void*));
 
 size_t llist_size(const LinkedList *list);
 int llist_empty(const LinkedList *list);

@@ -219,6 +219,27 @@ void llist_foreach(LinkedList *list, void (*fn)(void *)) {
   }
 }
 
+/* compare function assumed to be equivalent to <= */
+int llist_sort(LinkedList *list, int (*compare)(void*,void*)) {
+  size_t i;
+  for (i = 0; i < list->size; ++i) {
+    size_t max_index = i;
+    void *max = llist_extract(list, max_index);
+    size_t j;
+    for (j = i; j < list->size; ++j) {
+      if ((compare)(max, llist_get(list, j))) {
+         max_index = j;
+         /* do not remove from list; just hold onto it for comparisons */
+         max = llist_get(list, max_index);
+      }
+    }
+    /* maximum must be extracted */
+    max = llist_extract(list, max_index);
+    llist_push_front(list, max);
+  }
+  return 0;
+}
+
 /* status functions */
 size_t llist_size(const LinkedList *list) { return list->size; }
 int llist_empty(const LinkedList *list) { return list->size == 0; }
