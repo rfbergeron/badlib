@@ -4,7 +4,8 @@
 
 #include "badlib.h"
 
-#define BLIB_ALIST_EMPTY { NULL, 0, 0, 0, NULL, NULL, BLIB_SUCCESS }
+#define BLIB_ALIST_EMPTY \
+  { NULL, 0, 0, 0, NULL, NULL, BLIB_SUCCESS }
 
 typedef struct alist {
   void **data;

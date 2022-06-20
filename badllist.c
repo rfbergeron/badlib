@@ -143,6 +143,32 @@ void *llist_back(const LinkedList *list) {
   return list->anchor->prev->data;
 }
 
+int llist_rotate_forwards(LinkedList *list) {
+  if (!llist_valid(list)) return 1;
+  if (list->anchor->next == list->anchor->prev) return 0;
+  Node *temp = list->anchor->next;
+  temp->next = list->anchor;
+  temp->prev = list->anchor->prev;
+  list->anchor->next = list->anchor->next->next;
+  list->anchor->next->prev = list->anchor;
+  list->anchor->prev->next = temp;
+  list->anchor->prev = temp;
+  return 0;
+}
+
+int llist_rotate_backwards(LinkedList *list) {
+  if (!llist_valid(list)) return 1;
+  if (list->anchor->next == list->anchor->prev) return 0;
+  Node *temp = list->anchor->prev;
+  temp->next = list->anchor->next;
+  temp->prev = list->anchor;
+  list->anchor->prev = list->anchor->prev->prev;
+  list->anchor->prev->next = list->anchor;
+  list->anchor->next->prev = temp;
+  list->anchor->next = temp;
+  return 0;
+}
+
 /* array functions */
 void *llist_get(const LinkedList *list, size_t index) {
   if (!llist_valid(list)) {
@@ -195,7 +221,11 @@ size_t llist_find(const LinkedList *list, void *target) {
   size_t i;
   for (i = 0; i < list->size; ++i) {
     void *element = llist_get(list, i);
-    if ((list->data_compare)(target, element)) return i;
+    if (list->data_compare) {
+      if ((list->data_compare)(target, element)) return i;
+    } else if (target == element) {
+      return i;
+    }
   }
   return -1;
 }
@@ -205,7 +235,11 @@ size_t llist_rfind(const LinkedList *list, void *target) {
   size_t i;
   for (i = llist_size(list); i >= 0; --i) {
     void *element = llist_get(list, i);
-    if ((list->data_compare)(target, element)) return i;
+    if (list->data_compare) {
+      if ((list->data_compare)(target, element)) return i;
+    } else if (target == element) {
+      return i;
+    }
   }
   return -1;
 }
@@ -220,7 +254,7 @@ void llist_foreach(LinkedList *list, void (*fn)(void *)) {
 }
 
 /* compare function assumed to be equivalent to <= */
-int llist_sort(LinkedList *list, int (*compare)(void*,void*)) {
+int llist_sort(LinkedList *list, int (*compare)(void *, void *)) {
   size_t i;
   for (i = 0; i < list->size; ++i) {
     size_t max_index = i;
@@ -228,9 +262,9 @@ int llist_sort(LinkedList *list, int (*compare)(void*,void*)) {
     size_t j;
     for (j = i; j < list->size; ++j) {
       if ((compare)(max, llist_get(list, j))) {
-         max_index = j;
-         /* do not remove from list; just hold onto it for comparisons */
-         max = llist_get(list, max_index);
+        max_index = j;
+        /* do not remove from list; just hold onto it for comparisons */
+        max = llist_get(list, max_index);
       }
     }
     /* maximum must be extracted */
@@ -241,10 +275,23 @@ int llist_sort(LinkedList *list, int (*compare)(void*,void*)) {
 }
 
 /* status functions */
-size_t llist_size(const LinkedList *list) { return list->size; }
-int llist_empty(const LinkedList *list) { return list->size == 0; }
+size_t llist_size(const LinkedList *list) {
+  if (!llist_valid(list)) {
+    last_status = BLIB_INVALID_STRUCT;
+    return 0;
+  }
+  return list->size;
+}
+
+int llist_empty(const LinkedList *list) {
+  if (!llist_valid(list)) {
+    last_status = BLIB_INVALID_STRUCT;
+    return 1;
+  }
+  return list->size == 0;
+}
+
 int llist_status(const LinkedList *list) {
   /* TODO(Robert): more robust way of storing status */
   return last_status;
 }
-

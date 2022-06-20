@@ -4,7 +4,8 @@
 
 #include "badlib.h"
 
-#define BLIB_LLIST_EMPTY { NULL, 0, 0, NULL, NULL, BLIB_SUCCESS }
+#define BLIB_LLIST_EMPTY \
+  { NULL, 0, 0, NULL, NULL }
 
 typedef struct node {
   struct node *next;
@@ -32,6 +33,9 @@ int llist_push_back(LinkedList *list, void *element);
 void *llist_pop_back(LinkedList *list);
 void *llist_back(const LinkedList *list);
 
+int llist_rotate_forwards(LinkedList *list);
+int llist_rotate_backwards(LinkedList *list);
+
 void *llist_get(const LinkedList *list, size_t index);
 int llist_insert(LinkedList *list, void *element, size_t index);
 int llist_delete(LinkedList *list, size_t index);
@@ -39,7 +43,7 @@ void *llist_extract(LinkedList *list, size_t index);
 size_t llist_find(const LinkedList *list, void *target);
 size_t llist_rfind(const LinkedList *list, void *target);
 void llist_foreach(LinkedList *list, void (*fn)(void *));
-int llist_sort(LinkedList *list, int (*compare)(void*,void*));
+int llist_sort(LinkedList *list, int (*compare)(void *, void *));
 
 size_t llist_size(const LinkedList *list);
 int llist_empty(const LinkedList *list);

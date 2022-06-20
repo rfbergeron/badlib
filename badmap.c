@@ -13,7 +13,7 @@ int default_comp(void *k1, void *k2) { return k1 == k2; }
 
 int map_init(Map *map, size_t bucket_count, BlibDestroyer key_dest,
              BlibDestroyer value_dest, BlibComparator key_comp) {
-  if (!map) return 1;
+  if (!map || bucket_count < 1) return 1;
 
   map->buckets = malloc(bucket_count * sizeof(MapBucket));
   size_t i;
@@ -36,8 +36,7 @@ int map_init(Map *map, size_t bucket_count, BlibDestroyer key_dest,
 }
 
 int map_destroy(Map *map) {
-  if (!map) return 1;
-  if (!map->buckets) return 1;
+  if (!map || !map->buckets) return 1;
 
   size_t i;
   for (i = 0; i < map->bucket_count; ++i) {
@@ -55,7 +54,7 @@ int map_destroy(Map *map) {
 }
 
 void *map_get(const Map *map, void *key, size_t key_size) {
-  if (!map || !(map->buckets) || !key) return NULL;
+  if (!map || !map->buckets || !key) return NULL;
 
   size_t hash = 0;
   MurmurHash3_x86_32(key, key_size, 0, &hash);
@@ -72,7 +71,7 @@ void *map_get(const Map *map, void *key, size_t key_size) {
 }
 
 int map_insert(Map *map, void *key, size_t key_size, void *value) {
-  if (!map || !(map->buckets) || !key) return 1;
+  if (!map || !map->buckets || !key) return 1;
 
   size_t hash = 0;
   MurmurHash3_x86_32(key, key_size, 0, &hash);
@@ -108,7 +107,7 @@ int map_insert(Map *map, void *key, size_t key_size, void *value) {
 }
 
 int map_delete(Map *map, void *key, size_t key_size) {
-  if (!map || !(map->buckets) || !key) return 1;
+  if (!map || !map->buckets || !key) return 1;
 
   size_t hash = 0;
   MurmurHash3_x86_32(key, key_size, 0, &hash);
@@ -136,7 +135,7 @@ int map_delete(Map *map, void *key, size_t key_size) {
 }
 
 int map_find(const Map *map, void *key, size_t key_size, size_t *out) {
-  if (!map || !(map->buckets) || !key || !out) return 0;
+  if (!map || !map->buckets || !key || !out) return 0;
 
   size_t hash = 0;
   MurmurHash3_x86_32(key, key_size, 0, &hash);
@@ -156,12 +155,13 @@ int map_find(const Map *map, void *key, size_t key_size, size_t *out) {
 }
 
 int map_keys(const Map *map, LinkedList *out) {
-  if (!map || !out) return 1;
+  if (!map || !map->buckets) return 1;
   size_t i;
-  for (i = 0; i < map_size(map); ++i) {
+  for (i = 0; i < map->bucket_count; ++i) {
     MapBucket *current = map->buckets[i].next;
     while (current != (map->buckets + i)) {
-      llist_push_back(out, current->key);
+      int status = llist_push_back(out, current->key);
+      if (status) return status;
       current = current->next;
     }
   }
@@ -169,20 +169,21 @@ int map_keys(const Map *map, LinkedList *out) {
 }
 
 int map_values(const Map *map, LinkedList *out) {
-  if (!map || !out) return 1;
+  if (!map || !map->buckets) return 1;
   size_t i;
   for (i = 0; i < map_size(map); ++i) {
     MapBucket *current = map->buckets[i].next;
     while (current != (map->buckets + i)) {
-      llist_push_back(out, current->value);
+      int status = llist_push_back(out, current->value);
+      if (status) return status;
       current = current->next;
     }
   }
   return 0;
 }
 
-void map_foreach_key(Map *map, void (*fn)(void *)) {
-  if (!map || !fn) return;
+int map_foreach_key(Map *map, void (*fn)(void *)) {
+  if (!map || !map->buckets || !fn) return 1;
   size_t i;
   for (i = 0; i < map->bucket_count; ++i) {
     MapBucket *current = map->buckets[i].next;
@@ -191,10 +192,11 @@ void map_foreach_key(Map *map, void (*fn)(void *)) {
       current = current->next;
     }
   }
+  return 0;
 }
 
-void map_foreach_value(Map *map, void (*fn)(void *)) {
-  if (!map || !fn) return;
+int map_foreach_value(Map *map, void (*fn)(void *)) {
+  if (!map || !map->buckets || !fn) return 1;
   size_t i;
   for (i = 0; i < map->bucket_count; ++i) {
     MapBucket *current = map->buckets[i].next;
@@ -203,10 +205,11 @@ void map_foreach_value(Map *map, void (*fn)(void *)) {
       current = current->next;
     }
   }
+  return 0;
 }
 
-void map_foreach_pair(Map *map, void (*fn)(void *, void *)) {
-  if (!map || !fn) return;
+int map_foreach_pair(Map *map, void (*fn)(void *, void *)) {
+  if (!map || !map->buckets || !fn) return 1;
   size_t i;
   for (i = 0; i < map->bucket_count; ++i) {
     MapBucket *current = map->buckets[i].next;
@@ -215,11 +218,12 @@ void map_foreach_pair(Map *map, void (*fn)(void *, void *)) {
       current = current->next;
     }
   }
+  return 0;
 }
 
 size_t map_size(const Map *map) { return map->entry_count; }
 int map_empty(const Map *map) { return map->entry_count == 0; }
 int map_status(const Map *map) {
-    /* TODO(Robert): handle this better */
-    return last_status;
+  /* TODO(Robert): handle this better */
+  return last_status;
 }

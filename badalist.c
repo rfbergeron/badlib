@@ -168,6 +168,6 @@ int alist_resize(ArrayList *list, size_t size) {
 size_t alist_size(const ArrayList *list) { return list->size; }
 int alist_empty(const ArrayList *list) { return list->count == 0; }
 int alist_status(const ArrayList *list) {
-    /* TODO(Robert): more robust (threadsafe?) way of getting status */
-    return last_status;
+  /* TODO(Robert): more robust (threadsafe?) way of getting status */
+  return last_status;
 }
