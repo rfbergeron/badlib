@@ -26,7 +26,7 @@ clean:
 	rm -f ${OBJ} ${GCH} units.o test
 
 ci: 
-	git add ${HDR} ${SRC} ${MKFILE} units.c .gitignore TODO.md
+	git add ${HDR} ${SRC} ${MKFILE} units.c murmur3 .gitignore .gitmodules TODO.md
 
 format:
 	clang-format --style=Google -i ${SRC} ${HDR} units.c

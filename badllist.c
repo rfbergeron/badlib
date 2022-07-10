@@ -91,7 +91,7 @@ int llist_copy(LinkedList *dest, const LinkedList *src) {
 
   size_t i;
   for (i = 0; i < llist_size(src); ++i) {
-    int status = llist_push_back(dest, llist_get(src, i));
+    status = llist_push_back(dest, llist_get(src, i));
     if (status) return status;
   }
   return 0;
@@ -232,9 +232,9 @@ size_t llist_find(const LinkedList *list, void *target) {
 
 size_t llist_rfind(const LinkedList *list, void *target) {
   if (!llist_valid(list) || !target) return -1;
-  size_t i;
-  for (i = llist_size(list); i >= 0; --i) {
-    void *element = llist_get(list, i);
+  size_t i, list_size = llist_size(list);
+  for (i = 1; i <= list_size; ++i) {
+    void *element = llist_get(list, list_size - i);
     if (list->data_compare) {
       if ((list->data_compare)(target, element)) return i;
     } else if (target == element) {
@@ -292,6 +292,7 @@ int llist_empty(const LinkedList *list) {
 }
 
 int llist_status(const LinkedList *list) {
+  if (!llist_valid(list)) return BLIB_INVALID_STRUCT;
   /* TODO(Robert): more robust way of storing status */
   return last_status;
 }

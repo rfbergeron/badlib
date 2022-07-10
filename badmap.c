@@ -224,6 +224,7 @@ int map_foreach_pair(Map *map, void (*fn)(void *, void *)) {
 size_t map_size(const Map *map) { return map->entry_count; }
 int map_empty(const Map *map) { return map->entry_count == 0; }
 int map_status(const Map *map) {
+  if (map->buckets == NULL) return BLIB_INVALID_STRUCT;
   /* TODO(Robert): handle this better */
   return last_status;
 }

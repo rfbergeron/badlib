@@ -11,11 +11,6 @@ static ArrayList *arraylist = NULL;
 static LinkedList *linkedlist = NULL;
 static Map *map = NULL;
 
-static char alphanums[36] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-                             'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r',
-                             's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '0',
-                             '1', '2', '3', '4', '5', '6', '7', '8', '9'};
-
 int init_llist_suite(void) {
   linkedlist = malloc(sizeof(*linkedlist));
   if (linkedlist == NULL || llist_init(linkedlist, free, NULL)) return 1;
@@ -158,9 +153,9 @@ void test_map_basic(void) {
   fs[3] = 1.6f;
   char *k2 = "eat ass";
 
-  CU_ASSERT(0 == map_insert(map, k2, strnlen(k2, 10), fs));
-  CU_ASSERT_PTR_EQUAL(fs, map_get(map, k2, strnlen(k2, 10)));
-  CU_ASSERT(0 == map_delete(map, k2, strnlen(k2, 10)));
+  CU_ASSERT(0 == map_insert(map, k2, strlen(k2), fs));
+  CU_ASSERT_PTR_EQUAL(fs, map_get(map, k2, strlen(k2)));
+  CU_ASSERT(0 == map_delete(map, k2, strlen(k2)));
 
   float *fs2 = malloc(sizeof(float));
   short *fs3 = malloc(sizeof(short));
@@ -168,11 +163,11 @@ void test_map_basic(void) {
   *fs3 = 42;
   char *k3 = "ratioed";
 
-  CU_ASSERT(0 == map_insert(map, k3, strnlen(k3, 10), fs2));
-  CU_ASSERT_PTR_EQUAL(fs2, map_get(map, k3, strnlen(k3, 10)));
-  CU_ASSERT(0 == map_insert(map, k3, strnlen(k3, 10), fs3));
-  CU_ASSERT_PTR_EQUAL(fs3, map_get(map, k3, strnlen(k3, 10)));
-  CU_ASSERT(0 == map_delete(map, k3, strnlen(k3, 10)));
+  CU_ASSERT(0 == map_insert(map, k3, strlen(k3), fs2));
+  CU_ASSERT_PTR_EQUAL(fs2, map_get(map, k3, strlen(k3)));
+  CU_ASSERT(0 == map_insert(map, k3, strlen(k3), fs3));
+  CU_ASSERT_PTR_EQUAL(fs3, map_get(map, k3, strlen(k3)));
+  CU_ASSERT(0 == map_delete(map, k3, strlen(k3)));
 }
 
 void test_map_buckets(void) {

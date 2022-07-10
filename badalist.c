@@ -122,14 +122,14 @@ size_t alist_rfind(const ArrayList *list, void *target) {
     return 1;
   }
 
-  size_t i;
-  for (i = alist_size(list); i >= 0; --i) {
-    void *element = list->data[i];
+  size_t i, list_size = alist_size(list);
+  for (i = 1; i <= list_size; ++i) {
+    void *element = list->data[list_size - i];
     if ((list->data_compare)(target, element)) {
-      return i;
+      return list_size - i;
     }
   }
-  return -1;
+  return list_size;
 }
 
 void alist_foreach(ArrayList *list, void (*fn)(void *)) {
@@ -168,6 +168,7 @@ int alist_resize(ArrayList *list, size_t size) {
 size_t alist_size(const ArrayList *list) { return list->size; }
 int alist_empty(const ArrayList *list) { return list->count == 0; }
 int alist_status(const ArrayList *list) {
+  if (!alist_valid(list)) return BLIB_INVALID_STRUCT;
   /* TODO(Robert): more robust (threadsafe?) way of getting status */
   return last_status;
 }
