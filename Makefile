@@ -15,14 +15,19 @@ test: ${OBJ} units.o
 
 objects: ${OBJ}
 
-murmur3.o:
+murmur3.o: murmur3/murmur3.c
 	make -C murmur3/ murmur3.o
 	cp murmur3/murmur3.o ./
+
+murmur3/murmur3.c:
+	git submodule update --init murmur3
+	sed -i 's/\(.*\)\/\/\(.*\)/\1/' murmur3/murmur3.h
 
 %.o: %.c ${ALLHDR}
 	${CC} ${CWARN} ${CFLAGS} -c $^
 
 clean:
+	make -C murmur3/ clean
 	rm -f ${OBJ} ${GCH} units.o test
 
 ci: 
