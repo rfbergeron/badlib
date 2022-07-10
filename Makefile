@@ -8,22 +8,24 @@ HDR = badmap.h badllist.h badalist.h badset.h badlib.h
 OBJ = ${SRC:.c=.o} murmur3.o
 GCH = ${HDR:=.gch}
 
-.PHONY: clean ci format objects
+.PHONY: clean ci format objects murmur3
 
 test: ${OBJ} units.o
 	${CC} ${CWARN} ${CFLAGS} -lcunit -o $@ $^
 
 objects: ${OBJ}
 
-murmur3.o: murmur3/murmur3.c
-	make -C murmur3/ murmur3.o
-	cp murmur3/murmur3.o ./
-
-murmur3/murmur3.c:
+murmur3:
 	git submodule update --init murmur3
 	sed -i 's/\(.*\)\/\/\(.*\)/\1/' murmur3/murmur3.h
 
-%.o: %.c ${ALLHDR}
+murmur3.o: murmur3
+	make -C murmur3/ murmur3.o
+	cp murmur3/murmur3.o ./
+
+murmur3/murmur3.h: murmur3
+
+%.o: %.c ${HDR} murmur3/murmur3.h
 	${CC} ${CWARN} ${CFLAGS} -c $^
 
 clean:
