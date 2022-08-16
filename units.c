@@ -91,12 +91,12 @@ void test_llist_sequence(void) {
 
 int init_alist_suite(void) {
   arraylist = malloc(sizeof(*arraylist));
-  if (arraylist == NULL || alist_init(arraylist, 10, free, NULL)) return 1;
+  if (arraylist == NULL || alist_init(arraylist, 10)) return 1;
   return 0;
 }
 
 int clean_alist_suite(void) {
-  if (alist_destroy(arraylist)) return 1;
+  if (alist_destroy(arraylist, free)) return 1;
   free(arraylist);
   arraylist = NULL;
   return 0;
@@ -112,22 +112,21 @@ void test_alist(void) {
   *f = 1.25f;
   CU_ASSERT_PTR_NOT_NULL_FATAL(arraylist);
   CU_ASSERT(arraylist->size == 10);
-  CU_ASSERT(arraylist->max_size == 16);
-  CU_ASSERT(0 == alist_insert(arraylist, f, 5));
+  CU_ASSERT(0 == alist_insert(arraylist, f, 5, NULL));
   CU_ASSERT_PTR_EQUAL(alist_get(arraylist, 5), f);
-  CU_ASSERT(0 == alist_delete(arraylist, 5));
+  CU_ASSERT(0 == alist_delete(arraylist, 5, free));
   CU_ASSERT(1 == alist_empty(arraylist));
 }
 
 void test_alist_errors(void) {
   CU_ASSERT_PTR_NULL(alist_get(NULL, 10));
   CU_ASSERT_PTR_NULL(alist_get(arraylist, 11));
-  CU_ASSERT(1 == alist_insert(arraylist, NULL, 11));
-  CU_ASSERT(1 == alist_resize(arraylist, 0));
+  CU_ASSERT(1 == alist_insert(arraylist, NULL, 11, free));
+  CU_ASSERT(0 == alist_resize(arraylist, 0));
   CU_ASSERT_PTR_NULL(alist_get(arraylist, 0));
-  CU_ASSERT(W_BLIB_NOT_FOUND == alist_status(arraylist));
-  CU_ASSERT(1 == alist_delete(arraylist, 0));
-  CU_ASSERT(W_BLIB_NOT_FOUND == alist_status(arraylist));
+  CU_ASSERT(BLIB_OUT_OF_BOUNDS == alist_status(arraylist));
+  CU_ASSERT(1 == alist_delete(arraylist, 0, free));
+  CU_ASSERT(BLIB_OUT_OF_BOUNDS == alist_status(arraylist));
 }
 
 int init_map_suite(void) {
@@ -219,21 +218,18 @@ int main() {
   /* add the tests to the suite */
   if (
       /* linked list tests */
+      (NULL == CU_add_test(pSuite, "default values", test_llist_defaults)) ||
+      (NULL == CU_add_test(pSuite, "queue functions", test_llist_queue)) ||
+      (NULL == CU_add_test(pSuite, "deque functions", test_llist_deque)) ||
+      (NULL == CU_add_test(pSuite, "error handling", test_llist_errors)) ||
       (NULL ==
-       CU_add_test(pSuite, "test default values", test_llist_defaults)) ||
-      (NULL == CU_add_test(pSuite, "test queue functions", test_llist_queue)) ||
-      (NULL == CU_add_test(pSuite, "test deque functions", test_llist_deque)) ||
-      (NULL == CU_add_test(pSuite, "test error handling", test_llist_errors)) ||
-      (NULL ==
-       CU_add_test(pSuite, "test operation sequence", test_llist_sequence)) ||
+       CU_add_test(pSuite, "operation sequence", test_llist_sequence)) ||
       /* array list tests */
-      (NULL ==
-       CU_add_test(pSuite2, "test default values", test_alist_defaults)) ||
-      (NULL == CU_add_test(pSuite2, "test basic functionality", test_alist)) ||
-      (NULL ==
-       CU_add_test(pSuite2, "test error handling", test_alist_errors)) ||
-      (NULL == CU_add_test(pSuite3, "test basic functions", test_map_basic)) ||
-      (NULL == CU_add_test(pSuite3, "test bucket filling", test_map_buckets))
+      (NULL == CU_add_test(pSuite2, "default values", test_alist_defaults)) ||
+      (NULL == CU_add_test(pSuite2, "basic functions", test_alist)) ||
+      (NULL == CU_add_test(pSuite2, "error handling", test_alist_errors)) ||
+      (NULL == CU_add_test(pSuite3, "basic functions", test_map_basic)) ||
+      (NULL == CU_add_test(pSuite3, "bucket filling", test_map_buckets))
       /* map tests */
   ) {
     CU_cleanup_registry();
