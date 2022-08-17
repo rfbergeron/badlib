@@ -29,12 +29,12 @@ int alist_init(ArrayList *list, size_t size) {
   return 0;
 }
 
-int alist_destroy(ArrayList *list, BlibDestroyer destroyer) {
+int alist_destroy(ArrayList *list, BlibDestroyer destroy) {
   if (!alist_valid(list)) return 1;
   size_t i;
   for (i = 0; i < list->size; ++i) {
-    if (destroyer && list->data[i]) {
-      destroyer(list->data[i]);
+    if (destroy && list->data[i]) {
+      destroy(list->data[i]);
     }
   }
   free(list->data);
@@ -56,7 +56,7 @@ void *alist_get(const ArrayList *list, size_t index) {
 }
 
 int alist_insert(ArrayList *list, void *element, size_t index,
-                 BlibDestroyer destroyer) {
+                 BlibDestroyer destroy) {
   if (!alist_valid(list)) {
     return 1;
   } else if (index >= list->size) {
@@ -65,7 +65,7 @@ int alist_insert(ArrayList *list, void *element, size_t index,
   }
 
   if (list->data[index]) {
-    if (destroyer) destroyer(list->data[index]);
+    if (destroy) destroy(list->data[index]);
     --list->count;
   }
 
@@ -74,7 +74,7 @@ int alist_insert(ArrayList *list, void *element, size_t index,
   return 0;
 }
 
-int alist_delete(ArrayList *list, size_t index, BlibDestroyer destroyer) {
+int alist_delete(ArrayList *list, size_t index, BlibDestroyer destroy) {
   if (!alist_valid(list)) {
     return 1;
   } else if (index >= list->size) {
@@ -83,7 +83,7 @@ int alist_delete(ArrayList *list, size_t index, BlibDestroyer destroyer) {
   }
 
   if (list->data[index]) {
-    if (destroyer) destroyer(list->data[index]);
+    if (destroy) destroy(list->data[index]);
     --list->count;
   }
 
@@ -101,7 +101,7 @@ size_t alist_find(const ArrayList *list, void *target, BlibComparator compare) {
   size_t i;
   for (i = 0; i < alist_size(list); ++i) {
     void *element = list->data[i];
-    if (compare(target, element)) {
+    if (element && compare(target, element)) {
       return i;
     }
   }
@@ -119,7 +119,7 @@ size_t alist_rfind(const ArrayList *list, void *target,
   size_t i, list_size = alist_size(list);
   for (i = 1; i <= list_size; ++i) {
     void *element = list->data[list_size - i];
-    if (compare(target, element)) {
+    if (element && compare(target, element)) {
       return list_size - i;
     }
   }
@@ -131,20 +131,29 @@ void alist_foreach(ArrayList *list, void (*fn)(void *)) {
   size_t i;
   for (i = 0; i < list->size; ++i) {
     void *element = alist_get(list, i);
-    fn(element);
+    if (element) fn(element);
   }
 }
 
-int alist_resize(ArrayList *list, size_t size) {
+int alist_resize(ArrayList *list, size_t size, BlibDestroyer destroy) {
   if (!alist_valid(list)) {
     return 1;
   }
 
-  list->data = realloc(list->data, size);
   if (size > list->size) {
+    list->data = realloc(list->data, size);
     void **first_new = list->data + list->size;
     size_t length_new = size - list->size;
     memset(first_new, 0, sizeof(void *) * length_new);
+  } else {
+    size_t i;
+    for (i = size; i < list->size; ++i) {
+      if (list->data[i]) {
+        --list->count;
+        if (destroy) destroy(list->data[i]);
+      }
+    }
+    list->data = realloc(list->data, size);
   }
   list->size = size;
 

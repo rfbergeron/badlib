@@ -122,7 +122,7 @@ void test_alist_errors(void) {
   CU_ASSERT_PTR_NULL(alist_get(NULL, 10));
   CU_ASSERT_PTR_NULL(alist_get(arraylist, 11));
   CU_ASSERT(1 == alist_insert(arraylist, NULL, 11, free));
-  CU_ASSERT(0 == alist_resize(arraylist, 0));
+  CU_ASSERT(0 == alist_resize(arraylist, 0, NULL));
   CU_ASSERT_PTR_NULL(alist_get(arraylist, 0));
   CU_ASSERT(BLIB_OUT_OF_BOUNDS == alist_status(arraylist));
   CU_ASSERT(1 == alist_delete(arraylist, 0, free));
