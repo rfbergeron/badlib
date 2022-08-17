@@ -1,5 +1,6 @@
 #include "badmap.h"
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include "murmur3/murmur3.h"
@@ -154,13 +155,14 @@ int map_find(const Map *map, void *key, size_t key_size, size_t *out) {
   return (map->key_compare)(key, current->key);
 }
 
-int map_keys(const Map *map, LinkedList *out) {
-  if (!map || !map->buckets) return 1;
-  size_t i;
-  for (i = 0; i < map->bucket_count; ++i) {
+int map_keys(const Map *map, ArrayList *out) {
+  if (!map || !map->buckets || !out || !out->data) return 1;
+  if (alist_size(out) < map_size(map)) return 1;
+  size_t i, j = 0;
+  for (i = 0; i < map_size(map); ++i) {
     MapBucket *current = map->buckets[i].next;
     while (current != (map->buckets + i)) {
-      int status = llist_push_back(out, current->key);
+      int status = alist_insert(out, current->key, j++, NULL);
       if (status) return status;
       current = current->next;
     }
@@ -168,14 +170,33 @@ int map_keys(const Map *map, LinkedList *out) {
   return 0;
 }
 
-int map_values(const Map *map, LinkedList *out) {
-  if (!map || !map->buckets) return 1;
-  size_t i;
+int map_values(const Map *map, ArrayList *out) {
+  if (!map || !map->buckets || !out || !out->data) return 1;
+  if (alist_size(out) < map_size(map)) return 1;
+  size_t i, j = 0;
   for (i = 0; i < map_size(map); ++i) {
     MapBucket *current = map->buckets[i].next;
     while (current != (map->buckets + i)) {
-      int status = llist_push_back(out, current->value);
+      int status = alist_insert(out, current->value, j++, NULL);
       if (status) return status;
+      current = current->next;
+    }
+  }
+  return 0;
+}
+
+int map_pairs(const Map *map, ArrayList *out) {
+  if (!map || !map->buckets || !out || !out->data) return 1;
+  if (alist_size(out) < map_size(map)) return 1;
+  size_t i, j = 0;
+  for (i = 0; i < map->bucket_count; ++i) {
+    MapBucket *current = map->buckets[i].next;
+    while (current != map->buckets + i) {
+      MapPair *pair = malloc(sizeof(MapPair));
+      pair->key = current->key;
+      pair->value = current->value;
+      int status = alist_insert(out, pair, j++, NULL);
+      if (status) return 1;
       current = current->next;
     }
   }

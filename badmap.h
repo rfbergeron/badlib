@@ -2,11 +2,16 @@
 #define __BADMAP_H__
 #include <stddef.h>
 
+#include "badalist.h"
 #include "badlib.h"
-#include "badllist.h"
 
 #define BLIB_MAP_EMPTY \
   { NULL, 0, 0, NULL, NULL, NULL }
+
+typedef struct map_pair {
+  void *key;
+  void *value;
+} MapPair;
 
 typedef struct map_bucket {
   void *key;
@@ -32,8 +37,9 @@ void *map_get(const Map *map, void *key, const size_t key_size);
 int map_insert(Map *map, void *key, size_t key_size, void *value);
 int map_delete(Map *map, void *key, size_t key_size);
 int map_find(const Map *map, void *key, size_t key_size, size_t *out);
-int map_keys(const Map *map, LinkedList *out);
-int map_values(const Map *map, LinkedList *out);
+int map_keys(const Map *map, ArrayList *out);
+int map_values(const Map *map, ArrayList *out);
+int map_pairs(const Map *map, ArrayList *out);
 
 int map_foreach_key(Map *map, void (*fn)(void *));
 int map_foreach_value(Map *map, void (*fn)(void *));
