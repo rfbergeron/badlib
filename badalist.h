@@ -22,6 +22,7 @@ int alist_insert(ArrayList *list, void *data, size_t index,
 int alist_delete(ArrayList *list, size_t index, BlibDestroyer destroyer);
 size_t alist_find(const ArrayList *list, void *target, BlibComparator compare);
 size_t alist_rfind(const ArrayList *list, void *target, BlibComparator compare);
+void alist_ssort(ArrayList *list, BlibComparator greater_equal);
 int alist_resize(ArrayList *list, size_t size, BlibDestroyer destroyer);
 void alist_foreach(ArrayList *list, void (*fn)(void *));
 

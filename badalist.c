@@ -135,6 +135,22 @@ void alist_foreach(ArrayList *list, void (*fn)(void *)) {
   }
 }
 
+void alist_ssort(ArrayList *list, BlibComparator greater_equal) {
+  if (!alist_valid(list) || !greater_equal) return;
+  size_t i;
+  for (i = 0; i < list->size; ++i) {
+    size_t min_index = i;
+    size_t j;
+    for (j = i; j < list->size; ++j) {
+      void *current = list->data[j];
+      if (greater_equal(list->data[min_index], current)) min_index = j;
+    }
+    void *temp = list->data[min_index];
+    list->data[min_index] = list->data[i];
+    list->data[i] = temp;
+  }
+}
+
 int alist_resize(ArrayList *list, size_t size, BlibDestroyer destroy) {
   if (!alist_valid(list)) {
     return 1;
