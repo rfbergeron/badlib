@@ -159,7 +159,7 @@ int map_keys(const Map *map, ArrayList *out) {
   if (!map || !map->buckets || !out || !out->data) return 1;
   if (alist_size(out) < map_size(map)) return 1;
   size_t i, j = 0;
-  for (i = 0; i < map_size(map); ++i) {
+  for (i = 0; i < map->bucket_count; ++i) {
     MapBucket *current = map->buckets[i].next;
     while (current != (map->buckets + i)) {
       int status = alist_insert(out, current->key, j++, NULL);
@@ -174,7 +174,7 @@ int map_values(const Map *map, ArrayList *out) {
   if (!map || !map->buckets || !out || !out->data) return 1;
   if (alist_size(out) < map_size(map)) return 1;
   size_t i, j = 0;
-  for (i = 0; i < map_size(map); ++i) {
+  for (i = 0; i < map->bucket_count; ++i) {
     MapBucket *current = map->buckets[i].next;
     while (current != (map->buckets + i)) {
       int status = alist_insert(out, current->value, j++, NULL);
