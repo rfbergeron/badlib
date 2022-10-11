@@ -1,5 +1,6 @@
 #include "badllist.h"
 
+#include <stdarg.h>
 #include <stddef.h>
 #include <stdlib.h>
 
@@ -78,6 +79,20 @@ int llist_destroy(LinkedList *list) {
   free(list->anchor);
   /* paranoid free */
   list->anchor = NULL;
+  return 0;
+}
+
+int llist_clear(LinkedList *list) {
+  if (list == NULL)
+    return 1;
+  else if (list->anchor == NULL) {
+    last_status = BLIB_INVALID_STRUCT;
+    return 1;
+  }
+
+  while (list->anchor->next != list->anchor) {
+    node_destroy(list, list->anchor->next, NULL);
+  }
   return 0;
 }
 
@@ -295,4 +310,226 @@ int llist_status(const LinkedList *list) {
   if (!llist_valid(list)) return BLIB_INVALID_STRUCT;
   /* TODO(Robert): more robust way of storing status */
   return last_status;
+}
+
+ListIter *llist_iter_begin(LinkedList *list) {
+  if (!llist_valid(list)) {
+    last_status = BLIB_INVALID_STRUCT;
+    return NULL;
+  }
+  ListIter *ret = malloc(sizeof(ListIter));
+  ret->list = list;
+  ret->node = list->anchor->next;
+  return ret;
+}
+
+ListIter *llist_iter_end(LinkedList *list) {
+  if (!llist_valid(list)) {
+    last_status = BLIB_INVALID_STRUCT;
+    return NULL;
+  }
+  ListIter *ret = malloc(sizeof(ListIter));
+  ret->list = list;
+  ret->node = list->anchor;
+  return ret;
+}
+
+ListIter *llist_iter_last(LinkedList *list) {
+  if (!llist_valid(list)) {
+    last_status = BLIB_INVALID_STRUCT;
+    return NULL;
+  }
+  ListIter *ret = malloc(sizeof(ListIter));
+  ret->list = list;
+  ret->node = list->anchor->prev;
+  return ret;
+}
+
+ListIter *llist_iter_at(LinkedList *list, size_t index) {
+  if (!llist_valid(list)) {
+    last_status = BLIB_INVALID_STRUCT;
+    return NULL;
+  } else if (index > list->size) {
+    last_status = BLIB_OUT_OF_BOUNDS;
+    return NULL;
+  }
+  ListIter *ret = malloc(sizeof(ListIter));
+  ret->list = list;
+  ret->node = node_at(list, index);
+  return ret;
+}
+
+int liter_ins_before(ListIter *iter, void *data) {
+  if (iter == NULL) {
+    last_status = BLIB_INVALID_STRUCT;
+    return -1;
+  }
+  return node_init(iter->list, iter->node->prev, iter->node, data);
+}
+
+int liter_ins_after(ListIter *iter, void *data) {
+  if (iter == NULL) {
+    last_status = BLIB_INVALID_STRUCT;
+    return -1;
+  }
+  return node_init(iter->list, iter->node, iter->node->next, data);
+}
+
+int liter_delete(ListIter *iter) {
+  if (iter == NULL) {
+    last_status = BLIB_INVALID_STRUCT;
+    return -1;
+  }
+  if (iter->node == iter->list->anchor) {
+    last_status = BLIB_OUT_OF_BOUNDS;
+    return -1;
+  }
+  Node *to_delete = iter->node;
+  if (to_delete->next == iter->list->anchor) {
+    iter->node = to_delete->prev;
+  } else {
+    iter->node = to_delete->next;
+  }
+  return node_destroy(iter->list, to_delete, NULL);
+}
+
+int liter_advance(ListIter *iter, ptrdiff_t count) {
+  if (iter == NULL) {
+    last_status = BLIB_INVALID_STRUCT;
+    return -1;
+  }
+  ptrdiff_t i;
+  if (count < 0) {
+    for (i = 0; i > count; --i) {
+      if (iter->node->prev == iter->list->anchor) {
+        last_status = BLIB_OUT_OF_BOUNDS;
+        return -1;
+      } else {
+        iter->node = iter->node->prev;
+      }
+    }
+  } else {
+    for (i = 0; i < count; ++i) {
+      if (iter->node == iter->list->anchor) {
+        last_status = BLIB_OUT_OF_BOUNDS;
+        return -1;
+      } else {
+        iter->node = iter->node->next;
+      }
+    }
+  }
+  return 0;
+}
+
+ListIter *liter_next(ListIter *iter, size_t count) {
+  if (iter == NULL) {
+    last_status = BLIB_INVALID_STRUCT;
+    return NULL;
+  }
+  Node *next = iter->node;
+  size_t i;
+  for (i = 0; i < count; ++i) {
+    if (next == iter->list->anchor) {
+      last_status = BLIB_OUT_OF_BOUNDS;
+      return NULL;
+    } else {
+      next = next->next;
+    }
+  }
+  ListIter *ret = malloc(sizeof(ListIter));
+  ret->list = iter->list;
+  ret->node = next;
+  return ret;
+}
+
+ListIter *liter_prev(ListIter *iter, size_t count) {
+  if (iter == NULL) {
+    last_status = BLIB_INVALID_STRUCT;
+    return NULL;
+  }
+  Node *prev = iter->node;
+  size_t i;
+  for (i = 0; i < count; ++i) {
+    if (prev->prev == iter->list->anchor) {
+      last_status = BLIB_OUT_OF_BOUNDS;
+      return NULL;
+    } else {
+      prev = prev->prev;
+    }
+  }
+  ListIter *ret = malloc(sizeof(ListIter));
+  ret->list = iter->list;
+  ret->node = prev;
+  return ret;
+}
+
+ListIter *liter_insert(ListIter *iter, size_t count, ...) {
+  va_list args;
+  va_start(args, count);
+  size_t i;
+  ListIter *ret = liter_copy(iter);
+  if (ret == NULL) return ret;
+  for (i = 0; i < count; ++i) {
+    void *element = va_arg(args, void *);
+    int status = node_init(iter->list, iter->node, iter->node->next, element);
+    if (status) {
+      free(ret);
+      return NULL;
+    }
+    status = liter_advance(iter, 1);
+    if (status) {
+      free(ret);
+      return NULL;
+    }
+  }
+  return ret;
+}
+
+ListIter *liter_copy(ListIter *iter) {
+  if (iter == NULL) {
+    last_status = BLIB_INVALID_STRUCT;
+    return NULL;
+  }
+  ListIter *ret = malloc(sizeof(ListIter));
+  *ret = *iter;
+  return ret;
+}
+
+void *liter_get(ListIter *iter) {
+  if (iter == NULL) {
+    last_status = BLIB_INVALID_STRUCT;
+    return NULL;
+  } else if (iter->node == iter->list->anchor) {
+    last_status = BLIB_OUT_OF_BOUNDS;
+    return NULL;
+  }
+  return iter->node->data;
+}
+
+int liter_set(ListIter *iter, void *data) {
+  if (iter == NULL) {
+    last_status = BLIB_INVALID_STRUCT;
+    return -1;
+  } else if (iter->node == iter->list->anchor) {
+    last_status = BLIB_OUT_OF_BOUNDS;
+    return -1;
+  }
+  if (iter->list->data_destroy) iter->list->data_destroy(iter->node->data);
+  iter->node->data = data;
+  return 0;
+}
+
+int liter_end(ListIter *iter) {
+  if (iter == NULL) {
+    last_status = BLIB_INVALID_STRUCT;
+    return -1;
+  }
+  return iter->node == iter->list->anchor;
+}
+
+int liter_status(ListIter *iter) {
+  if (iter == NULL) {
+    return BLIB_INVALID_STRUCT;
+  }
+  return llist_status(iter->list);
 }

@@ -5,7 +5,7 @@
 #include "badlib.h"
 
 #define BLIB_LLIST_EMPTY \
-  { NULL, 0, 0, NULL, NULL }
+  { NULL, NULL, NULL, 0 }
 
 typedef struct node {
   struct node *next;
@@ -15,14 +15,19 @@ typedef struct node {
 
 typedef struct llist {
   Node *anchor;
-  size_t size;
-  size_t max_size;
   BlibDestroyer data_destroy;
   BlibComparator data_compare;
+  size_t size;
 } LinkedList;
+
+typedef struct llist_iter {
+  struct node *node;
+  LinkedList *list;
+} ListIter;
 
 int llist_init(LinkedList *list, BlibDestroyer dest, BlibComparator comp);
 int llist_destroy(LinkedList *list);
+int llist_clear(LinkedList *list);
 int llist_copy(LinkedList *dest, const LinkedList *src);
 
 int llist_push_front(LinkedList *list, void *element);
@@ -48,4 +53,21 @@ int llist_sort(LinkedList *list, int (*compare)(void *, void *));
 size_t llist_size(const LinkedList *list);
 int llist_empty(const LinkedList *list);
 int llist_status(const LinkedList *list);
+
+ListIter *llist_iter_begin(LinkedList *list);
+ListIter *llist_iter_end(LinkedList *list);
+ListIter *llist_iter_last(LinkedList *list);
+ListIter *llist_iter_at(LinkedList *list, size_t index);
+int liter_ins_before(ListIter *iter, void *data);
+int liter_ins_after(ListIter *iter, void *data);
+int liter_delete(ListIter *iter);
+int liter_advance(ListIter *iter, ptrdiff_t count);
+ListIter *liter_next(ListIter *iter, size_t count);
+ListIter *liter_prev(ListIter *iter, size_t count);
+ListIter *liter_insert(ListIter *iter, size_t count, ...);
+ListIter *liter_copy(ListIter *iter);
+void *liter_get(ListIter *iter);
+int liter_set(ListIter *iter, void *data);
+int liter_end(ListIter *iter);
+int liter_status(ListIter *iter);
 #endif
