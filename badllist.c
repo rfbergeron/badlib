@@ -393,6 +393,47 @@ int liter_delete(ListIter *iter) {
   return node_destroy(iter->list, to_delete, NULL);
 }
 
+int liter_push_back(ListIter *iter, ListIter **out, size_t count, ...) {
+  va_list args;
+  va_start(args, count);
+  size_t i;
+  ListIter *current = (out != NULL && *out == iter) ? iter : liter_copy(iter);
+  if (current == NULL) return -1;
+  for (i = 0; i < count; ++i) {
+    void *element = va_arg(args, void *);
+    int status =
+        node_init(current->list, current->node, current->node->next, element);
+    if (status) {
+      free(current);
+      return -1;
+    }
+    current->node = current->node->next;
+  }
+  if (out != NULL)
+    *out = current;
+  else
+    free(current);
+  return 0;
+}
+
+int liter_push_front(ListIter *iter, ListIter **out, size_t count, ...) {
+  va_list args;
+  va_start(args, count);
+  size_t i;
+  for (i = 0; i < count; ++i) {
+    void *element = va_arg(args, void *);
+    int status = node_init(iter->list, iter->node->prev, iter->node, element);
+    if (status) return -1;
+    if (i == 0 && out != NULL)
+      *out = *out == iter ? (status = liter_advance(iter, -1), iter)
+                          : liter_prev(iter, 1);
+    if (status) return -1;
+  }
+  if (count == 0 && out != NULL) *out = liter_copy(iter);
+  if (out != NULL && *out == NULL) return -1;
+  return 0;
+}
+
 int liter_advance(ListIter *iter, ptrdiff_t count) {
   if (iter == NULL) {
     last_status = BLIB_INVALID_STRUCT;

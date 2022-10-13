@@ -61,6 +61,8 @@ ListIter *llist_iter_at(LinkedList *list, size_t index);
 int liter_ins_before(ListIter *iter, void *data);
 int liter_ins_after(ListIter *iter, void *data);
 int liter_delete(ListIter *iter);
+int liter_push_back(ListIter *iter, ListIter **out, size_t count, ...);
+int liter_push_front(ListIter *iter, ListIter **out, size_t count, ...);
 int liter_advance(ListIter *iter, ptrdiff_t count);
 ListIter *liter_next(ListIter *iter, size_t count);
 ListIter *liter_prev(ListIter *iter, size_t count);
