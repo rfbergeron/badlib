@@ -67,6 +67,7 @@ int liter_advance(ListIter *iter, ptrdiff_t count);
 ListIter *liter_next(ListIter *iter, size_t count);
 ListIter *liter_prev(ListIter *iter, size_t count);
 ListIter *liter_insert(ListIter *iter, size_t count, ...);
+int liter_move_range(ListIter *start, ListIter *end, ListIter *where);
 ListIter *liter_copy(ListIter *iter);
 void *liter_get(ListIter *iter);
 int liter_set(ListIter *iter, void *data);

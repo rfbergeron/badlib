@@ -526,6 +526,18 @@ ListIter *liter_insert(ListIter *iter, size_t count, ...) {
   return ret;
 }
 
+int liter_move_range(ListIter *start, ListIter *end, ListIter *where) {
+  if (!start || !end || !where) return -1;
+  if (start->list != where->list || end->list != where->list) return -1;
+  start->node->prev->next = end->node->next;
+  end->node->next->prev = start->node->prev;
+  start->node->prev = where->node;
+  end->node->next = where->node->next;
+  where->node->next = start->node;
+  where->node->next->prev = end->node;
+  return 0;
+}
+
 ListIter *liter_copy(ListIter *iter) {
   if (iter == NULL) {
     last_status = BLIB_INVALID_STRUCT;
