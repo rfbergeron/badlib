@@ -394,21 +394,24 @@ int liter_delete(ListIter *iter) {
 }
 
 int liter_push_back(ListIter *iter, ListIter **out, size_t count, ...) {
+  ListIter *current = (out != NULL && *out == iter) ? iter : liter_copy(iter);
+  if (current == NULL) return -1;
   va_list args;
   va_start(args, count);
   size_t i;
-  ListIter *current = (out != NULL && *out == iter) ? iter : liter_copy(iter);
-  if (current == NULL) return -1;
   for (i = 0; i < count; ++i) {
     void *element = va_arg(args, void *);
     int status =
         node_init(current->list, current->node, current->node->next, element);
     if (status) {
-      free(current);
-      return -1;
+      va_end(args);
+      if (current != iter) free(current);
+      if (out != NULL && *out != iter) *out = NULL;
+      return status;
     }
     current->node = current->node->next;
   }
+  va_end(args);
   if (out != NULL)
     *out = current;
   else
@@ -417,20 +420,48 @@ int liter_push_back(ListIter *iter, ListIter **out, size_t count, ...) {
 }
 
 int liter_push_front(ListIter *iter, ListIter **out, size_t count, ...) {
+  ListIter *ins_loc;
+  if (out == NULL) {
+    ins_loc = iter;
+  } else if (*out != iter) {
+    *out = liter_prev(iter, 1);
+    if (*out == NULL) return liter_status(iter);
+    ins_loc = iter;
+  } else {
+    int status = liter_advance(iter, -1);
+    if (status) return status;
+    ins_loc = liter_next(iter, 1);
+    if (ins_loc == NULL) return liter_status(iter);
+  }
   va_list args;
   va_start(args, count);
   size_t i;
   for (i = 0; i < count; ++i) {
     void *element = va_arg(args, void *);
-    int status = node_init(iter->list, iter->node->prev, iter->node, element);
-    if (status) return -1;
-    if (i == 0 && out != NULL)
-      *out = *out == iter ? (status = liter_advance(iter, -1), iter)
-                          : liter_prev(iter, 1);
-    if (status) return -1;
+    int status =
+        node_init(ins_loc->list, ins_loc->node->prev, ins_loc->node, element);
+    if (status) {
+      va_end(args);
+      if (ins_loc != iter) {
+        free(ins_loc);
+      } else if (out != NULL) {
+        free(*out);
+        *out = NULL;
+      }
+      return status;
+    }
   }
-  if (count == 0 && out != NULL) *out = liter_copy(iter);
-  if (out != NULL && *out == NULL) return -1;
+  va_end(args);
+  if (out != NULL) {
+    int status = liter_advance(*out, 1);
+    if (status) {
+      if (*out != iter) {
+        free(*out);
+        *out = NULL;
+      }
+      return status;
+    }
+  }
   return 0;
 }
 
@@ -442,7 +473,7 @@ int liter_advance(ListIter *iter, ptrdiff_t count) {
   ptrdiff_t i;
   if (count < 0) {
     for (i = 0; i > count; --i) {
-      if (iter->node->prev == iter->list->anchor) {
+      if (iter->node == iter->list->anchor && i < 0) {
         last_status = BLIB_OUT_OF_BOUNDS;
         return -1;
       } else {
@@ -451,7 +482,7 @@ int liter_advance(ListIter *iter, ptrdiff_t count) {
     }
   } else {
     for (i = 0; i < count; ++i) {
-      if (iter->node == iter->list->anchor) {
+      if (iter->node == iter->list->anchor && i > 0) {
         last_status = BLIB_OUT_OF_BOUNDS;
         return -1;
       } else {
@@ -470,7 +501,7 @@ ListIter *liter_next(ListIter *iter, size_t count) {
   Node *next = iter->node;
   size_t i;
   for (i = 0; i < count; ++i) {
-    if (next == iter->list->anchor) {
+    if (next == iter->list->anchor && i > 0) {
       last_status = BLIB_OUT_OF_BOUNDS;
       return NULL;
     } else {
@@ -491,7 +522,7 @@ ListIter *liter_prev(ListIter *iter, size_t count) {
   Node *prev = iter->node;
   size_t i;
   for (i = 0; i < count; ++i) {
-    if (prev->prev == iter->list->anchor) {
+    if (prev->prev == iter->list->anchor && i > 0) {
       last_status = BLIB_OUT_OF_BOUNDS;
       return NULL;
     } else {
