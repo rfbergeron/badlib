@@ -34,7 +34,7 @@ int alist_destroy(ArrayList *list, BlibDestroyer destroy) {
   size_t i;
   for (i = 0; i < list->size; ++i) {
     if (destroy && list->data[i]) {
-      destroy(list->data[i]);
+      DESTROY_DATA(destroy, list->data[i]);
     }
   }
   free(list->data);
@@ -65,7 +65,7 @@ int alist_insert(ArrayList *list, void *element, size_t index,
   }
 
   if (list->data[index]) {
-    if (destroy) destroy(list->data[index]);
+    if (destroy) DESTROY_DATA(destroy, list->data[index]);
     --list->count;
   }
 
@@ -83,7 +83,7 @@ int alist_delete(ArrayList *list, size_t index, BlibDestroyer destroy) {
   }
 
   if (list->data[index]) {
-    if (destroy) destroy(list->data[index]);
+    if (destroy) DESTROY_DATA(destroy, list->data[index]);
     --list->count;
   }
 
@@ -166,7 +166,7 @@ int alist_resize(ArrayList *list, size_t size, BlibDestroyer destroy) {
     for (i = size; i < list->size; ++i) {
       if (list->data[i]) {
         --list->count;
-        if (destroy) destroy(list->data[i]);
+        if (destroy) DESTROY_DATA(destroy, list->data[i]);
       }
     }
     list->data = realloc(list->data, size);

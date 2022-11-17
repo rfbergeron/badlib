@@ -1,5 +1,15 @@
 #ifndef __BADLIB_H__
 #define __BADLIB_H__
+
+#ifdef UNIT_TESTING
+extern void _test_free(void* const ptr, const char* file, const int line);
+#define DESTROY_DATA(FN, DATA) ((FN) == free \
+        ? _test_free((DATA), __FILE__, __LINE__) \
+        : (FN)(DATA))
+#else
+#define DESTROY_DATA(FN, DATA) ((FN)(DATA))
+#endif
+
 typedef enum badlib_error {
   BLIB_SUCCESS,
   BLIB_INVALID_STRUCT,

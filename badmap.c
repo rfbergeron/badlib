@@ -91,7 +91,7 @@ int map_insert(Map *map, void *key, size_t key_size, void *value) {
 
   if ((map->key_compare)(prev->next->key, key)) {
     /* key already present; replace value */
-    if (map->value_destroy) (map->value_destroy)(prev->next->value);
+    if (map->value_destroy) DESTROY_DATA(map->value_destroy, prev->next->value);
     prev->next->value = value;
   } else {
     /* insert new bucket */
@@ -126,8 +126,8 @@ int map_delete(Map *map, void *key, size_t key_size) {
     MapBucket *to_free = prev->next;
     prev->next = to_free->next;
 
-    if (map->key_destroy) (map->key_destroy)(to_free->key);
-    if (map->value_destroy) (map->value_destroy)(to_free->value);
+    if (map->key_destroy) DESTROY_DATA(map->key_destroy, to_free->key);
+    if (map->value_destroy) DESTROY_DATA(map->value_destroy, to_free->value);
 
     free(to_free);
     --(map->entry_count);

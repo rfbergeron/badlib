@@ -35,7 +35,7 @@ static int node_destroy(LinkedList *list, Node *node, void **wants_data) {
   if (wants_data) {
     *wants_data = node->data;
   } else if (list->data_destroy) {
-    (list->data_destroy)(node->data);
+    DESTROY_DATA(list->data_destroy, node->data);
   }
   free(node);
   --list->size;
@@ -598,7 +598,8 @@ int liter_set(ListIter *iter, void *data) {
     last_status = BLIB_OUT_OF_BOUNDS;
     return -1;
   }
-  if (iter->list->data_destroy) iter->list->data_destroy(iter->node->data);
+  if (iter->list->data_destroy)
+    DESTROY_DATA(iter->list->data_destroy, iter->node->data);
   iter->node->data = data;
   return 0;
 }
