@@ -452,6 +452,7 @@ int liter_push_front(ListIter *iter, ListIter **out, size_t count, ...) {
     }
   }
   va_end(args);
+  if (ins_loc != iter) free(ins_loc);
   if (out != NULL) {
     int status = liter_advance(*out, 1);
     if (status) {
