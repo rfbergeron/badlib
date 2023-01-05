@@ -25,6 +25,8 @@ murmur3:
 	patch --directory murmur3/ <./murmur3.patch
 
 murmur3.o: CWARN += -Wno-implicit-fallthrough
+murmur3.o: murmur3.c ${HDR} murmur3/murmur3.h
+	${CC} ${CWARN} ${CPPFLAGS} $(subst -fsanitize=undefined,,${CFLAGS}) -c $<
 %.o: %.c ${HDR} murmur3/murmur3.h
 	${CC} ${CWARN} ${CPPFLAGS} ${CFLAGS} -c $<
 

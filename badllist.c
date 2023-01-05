@@ -546,15 +546,18 @@ ListIter *liter_insert(ListIter *iter, size_t count, ...) {
     void *element = va_arg(args, void *);
     int status = node_init(iter->list, iter->node, iter->node->next, element);
     if (status) {
+      va_end(args);
       free(ret);
       return NULL;
     }
     status = liter_advance(iter, 1);
     if (status) {
+      va_end(args);
       free(ret);
       return NULL;
     }
   }
+  va_end(args);
   return ret;
 }
 
