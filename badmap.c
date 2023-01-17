@@ -10,7 +10,7 @@ static BlibError last_status = BLIB_SUCCESS;
 /* simple comparison function used as a placeholder when the user does not
  * provide one of their own.
  */
-int default_comp(void *k1, void *k2) { return k1 == k2; }
+static int default_comp(void *k1, void *k2) { return k1 == k2; }
 
 int map_init(Map *map, size_t bucket_count, BlibDestroyer key_dest,
              BlibDestroyer value_dest, BlibComparator key_comp) {
@@ -51,6 +51,21 @@ int map_destroy(Map *map) {
   free(map->buckets);
   /* paranoid free */
   map->buckets = NULL;
+  return 0;
+}
+
+int map_clear(Map *map) {
+  if (!map || !map->buckets) return 1;
+
+  size_t i;
+  for (i = 0; i < map->bucket_count; ++i) {
+    while (map->buckets[i].next != (map->buckets + i)) {
+      MapBucket *to_free = map->buckets[i].next;
+      int status = map_delete(map, to_free->key, to_free->key_size);
+      if (status) return status;
+    }
+  }
+
   return 0;
 }
 

@@ -32,6 +32,7 @@ typedef struct map {
 int map_init(Map *map, size_t bucket_count, BlibDestroyer key_dest,
              BlibDestroyer value_dest, BlibComparator key_comp);
 int map_destroy(Map *map);
+int map_clear(Map *map);
 
 void *map_get(const Map *map, void *key, const size_t key_size);
 int map_insert(Map *map, void *key, size_t key_size, void *value);
