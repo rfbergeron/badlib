@@ -11,6 +11,7 @@ extern void _test_free(void* const ptr, const char* file, const int line);
 
 typedef enum badlib_error {
   BLIB_SUCCESS,
+  BLIB_ALLOC_FAIL,
   BLIB_INVALID_STRUCT,
   BLIB_UNINITIALIZED_ARG,
   BLIB_EMPTY,

@@ -28,6 +28,7 @@ void free_complicated(struct complicated *somedata) {
 ArrayList *arraylist = NULL;
 LinkedList *linkedlist = NULL;
 Map *map = NULL;
+int test_data[10] = {0, 2, 3, 1, 6, 5, 4, 9, 7, 8};
 Complicated *comp1;
 Complicated *comp2;
 Complicated *comp3;
@@ -199,8 +200,9 @@ void test_liter_iteration(void) {
 }
 
 int init_alist_suite(void) {
-  arraylist = malloc(sizeof(*arraylist));
-  if (arraylist == NULL || alist_init(arraylist, 10)) return 1;
+  if (NULL == (arraylist = malloc(sizeof(*arraylist))) ||
+      alist_init(arraylist, 10))
+    return 1;
   return 0;
 }
 
@@ -212,30 +214,153 @@ int clean_alist_suite(void) {
 }
 
 void test_alist_defaults(void) {
-  CU_ASSERT_EQUAL(0, arraylist->count);
-  CU_ASSERT_EQUAL(BLIB_SUCCESS, alist_status(arraylist));
-}
-
-void test_alist(void) {
-  float *f = malloc(sizeof(float));
-  *f = 1.25f;
   CU_ASSERT_PTR_NOT_NULL_FATAL(arraylist);
-  CU_ASSERT(arraylist->size == 10);
-  CU_ASSERT(0 == alist_insert(arraylist, f, 5, NULL));
-  CU_ASSERT_PTR_EQUAL(alist_get(arraylist, 5), f);
-  CU_ASSERT(0 == alist_delete(arraylist, 5, free));
-  CU_ASSERT(1 == alist_empty(arraylist));
+  CU_ASSERT_PTR_NOT_NULL_FATAL(arraylist->data);
+  CU_ASSERT_EQUAL(10, alist_size(arraylist));
+  CU_ASSERT_EQUAL(16, alist_cap(arraylist));
+  CU_ASSERT_EQUAL(0, alist_count(arraylist));
 }
 
-void test_alist_errors(void) {
-  CU_ASSERT_PTR_NULL(alist_get(NULL, 10));
-  CU_ASSERT_PTR_NULL(alist_get(arraylist, 11));
-  CU_ASSERT(1 == alist_insert(arraylist, NULL, 11, free));
-  CU_ASSERT(0 == alist_resize(arraylist, 0, NULL));
-  CU_ASSERT_PTR_NULL(alist_get(arraylist, 0));
-  CU_ASSERT(BLIB_OUT_OF_BOUNDS == alist_status(arraylist));
-  CU_ASSERT(1 == alist_delete(arraylist, 0, free));
-  CU_ASSERT(BLIB_OUT_OF_BOUNDS == alist_status(arraylist));
+void test_alist_arr(void) {
+  /* insert and delete */
+  int *foo = malloc(sizeof(int));
+  *foo = 216;
+  CU_ASSERT_EQUAL(0, alist_insert(arraylist, foo, 5, NULL));
+  CU_ASSERT_PTR_EQUAL(alist_get(arraylist, 5), foo);
+  CU_ASSERT_EQUAL(1, alist_count(arraylist));
+  CU_ASSERT_EQUAL(0, alist_delete(arraylist, 5, free));
+  CU_ASSERT_EQUAL(0, alist_count(arraylist));
+
+  /* insert, the insert again, replacing previous element */
+  int *bar = malloc(sizeof(int));
+  *bar = 12;
+  CU_ASSERT_EQUAL(0, alist_insert(arraylist, bar, 5, NULL));
+  size_t i;
+  for (i = 0; i < 10; ++i)
+    CU_ASSERT_EQUAL(0, alist_insert(arraylist, test_data + i, i, free));
+  CU_ASSERT_EQUAL(10, alist_count(arraylist));
+  CU_ASSERT_EQUAL(10, alist_size(arraylist));
+  for (i = 0; i < 10; ++i)
+    CU_ASSERT_EQUAL(test_data[i], *(int *)alist_get(arraylist, i));
+  for (i = 0; i < 10; ++i) CU_ASSERT_EQUAL(0, alist_delete(arraylist, i, NULL));
+  CU_ASSERT_EQUAL(0, alist_count(arraylist));
+
+  /* get and delete out of bounds */
+  CU_ASSERT_PTR_NULL(alist_get(arraylist, 10))
+  CU_ASSERT_EQUAL(BLIB_OUT_OF_BOUNDS, alist_status(arraylist));
+  CU_ASSERT_NOT_EQUAL(0, alist_delete(arraylist, 10, free));
+  CU_ASSERT_EQUAL(BLIB_OUT_OF_BOUNDS, alist_status(arraylist));
+}
+
+void test_alist_resize(void) {
+  /* insert past the end */
+  CU_ASSERT_NOT_EQUAL(0, alist_insert(arraylist, test_data, 11, free));
+  CU_ASSERT_EQUAL(10, alist_size(arraylist));
+  CU_ASSERT_PTR_EQUAL(NULL, alist_get(arraylist, 11));
+
+  /* insert at the end */
+  CU_ASSERT_EQUAL(0, alist_insert(arraylist, test_data, 10, free));
+  CU_ASSERT_EQUAL(11, alist_size(arraylist));
+  CU_ASSERT_EQUAL(16, alist_cap(arraylist));
+  CU_ASSERT_PTR_EQUAL(test_data, alist_get(arraylist, 10));
+  CU_ASSERT_EQUAL(0, alist_delete(arraylist, 10, NULL));
+
+  /* fill, then resize to zero */
+  size_t i;
+  for (i = 0; i < 10; ++i) {
+    int *temp = malloc(sizeof(int));
+    *temp = test_data[i];
+    CU_ASSERT_EQUAL(0, alist_insert(arraylist, temp, i, NULL));
+  }
+  CU_ASSERT_EQUAL(10, alist_count(arraylist));
+  CU_ASSERT_EQUAL(0, alist_resize(arraylist, 0, free));
+  CU_ASSERT_EQUAL(0, alist_count(arraylist));
+  CU_ASSERT_EQUAL(0, alist_size(arraylist));
+  CU_ASSERT_EQUAL(1, alist_cap(arraylist));
+  CU_ASSERT_TRUE(alist_empty(arraylist));
+
+  /* insert at end of zero-length array */
+  int *foo[3];
+  foo[0] = malloc(sizeof(int)), foo[1] = malloc(sizeof(int)),
+  foo[2] = malloc(sizeof(int));
+  *foo[0] = 6, *foo[1] = 17, *foo[2] = 18;
+  CU_ASSERT_EQUAL(0, alist_insert(arraylist, foo[0], 0, free));
+  CU_ASSERT_EQUAL(1, alist_size(arraylist));
+  CU_ASSERT_EQUAL(1, alist_cap(arraylist));
+  CU_ASSERT_EQUAL(0, alist_insert(arraylist, foo[1], 1, free));
+  CU_ASSERT_EQUAL(2, alist_size(arraylist));
+  CU_ASSERT_EQUAL(2, alist_cap(arraylist));
+  CU_ASSERT_EQUAL(0, alist_insert(arraylist, foo[2], 2, free));
+  CU_ASSERT_EQUAL(3, alist_size(arraylist));
+  CU_ASSERT_EQUAL(4, alist_cap(arraylist));
+  size_t j;
+  for (j = 0; j < 3; ++j) CU_ASSERT_PTR_EQUAL(foo[j], alist_get(arraylist, j));
+
+  /* resize to 20 */
+  CU_ASSERT_EQUAL(0, alist_resize(arraylist, 20, free));
+  CU_ASSERT_EQUAL(20, alist_size(arraylist));
+  CU_ASSERT_EQUAL(32, alist_cap(arraylist));
+
+  /* insert in and at end of resized array */
+  int *bar = malloc(sizeof(int)), *baz = malloc(sizeof(int));
+  *bar = 2, *baz = 3;
+  CU_ASSERT_EQUAL(0, alist_insert(arraylist, bar, 18, free));
+  CU_ASSERT_PTR_EQUAL(bar, alist_get(arraylist, 18));
+  CU_ASSERT_EQUAL(4, alist_count(arraylist));
+  CU_ASSERT_EQUAL(0, alist_insert(arraylist, baz, 20, free));
+  CU_ASSERT_PTR_EQUAL(baz, alist_get(arraylist, 20));
+  CU_ASSERT_EQUAL(21, alist_size(arraylist));
+
+  /* resize back to 10 and clear */
+  CU_ASSERT_EQUAL(0, alist_resize(arraylist, 10, free));
+  CU_ASSERT_EQUAL(3, alist_count(arraylist));
+  CU_ASSERT_EQUAL(10, alist_size(arraylist));
+  CU_ASSERT_EQUAL(16, alist_cap(arraylist));
+  CU_ASSERT_EQUAL(0, alist_clear(arraylist, free));
+  CU_ASSERT_EQUAL(0, alist_count(arraylist));
+}
+
+void test_alist_stack(void) {
+  int *foo[3];
+  foo[0] = malloc(sizeof(int)), foo[1] = malloc(sizeof(int)),
+  foo[2] = malloc(sizeof(int));
+  *foo[0] = 6, *foo[1] = 12, *foo[2] = 16;
+
+  /* push to array with existing size */
+  size_t i;
+  for (i = 0; i < 3; ++i) CU_ASSERT_EQUAL(0, alist_push(arraylist, foo[i]));
+  CU_ASSERT_EQUAL(13, alist_size(arraylist));
+  for (i = 0; i < 10; ++i) CU_ASSERT_PTR_EQUAL(NULL, alist_get(arraylist, i));
+  for (i = 0; i < 3; ++i) CU_ASSERT_EQUAL(foo[i], alist_get(arraylist, i + 10));
+
+  /* pop from array with existing size */
+  for (i = 0; i < 3; ++i) {
+    CU_ASSERT_EQUAL(foo[3 - i - 1], alist_peek(arraylist));
+    CU_ASSERT_EQUAL(0, alist_pop(arraylist, free));
+  }
+  CU_ASSERT_EQUAL(10, alist_size(arraylist));
+
+  /* pop until empty */
+  while (!alist_empty(arraylist))
+    CU_ASSERT_EQUAL(0, alist_pop(arraylist, free));
+  CU_ASSERT_EQUAL(0, alist_size(arraylist));
+  CU_ASSERT_EQUAL(16, alist_cap(arraylist));
+
+  /* resize to 0 to decrease capacity */
+  CU_ASSERT_EQUAL(0, alist_resize(arraylist, 0, free));
+  CU_ASSERT_EQUAL(0, alist_size(arraylist));
+  CU_ASSERT_EQUAL(1, alist_cap(arraylist));
+
+  /* push to empty list, then clear */
+  for (i = 0; i < 10; ++i)
+    CU_ASSERT_EQUAL(0, alist_push(arraylist, test_data + i));
+  for (i = 0; i < 10; ++i)
+    CU_ASSERT_EQUAL(test_data + i, alist_get(arraylist, i));
+  CU_ASSERT_EQUAL(10, alist_count(arraylist));
+  CU_ASSERT_EQUAL(10, alist_size(arraylist));
+  CU_ASSERT_EQUAL(16, alist_cap(arraylist));
+  CU_ASSERT_EQUAL(0, alist_clear(arraylist, NULL));
+  CU_ASSERT_EQUAL(0, alist_count(arraylist));
 }
 
 int init_map_suite(void) {
@@ -351,9 +476,11 @@ int main() {
       /* array list tests */
       (NULL ==
        CU_add_test(alist_pSuite, "default values", test_alist_defaults)) ||
-      (NULL == CU_add_test(alist_pSuite, "basic functions", test_alist)) ||
+      (NULL == CU_add_test(alist_pSuite, "array functions", test_alist_arr)) ||
       (NULL ==
-       CU_add_test(alist_pSuite, "error handling", test_alist_errors)) ||
+       CU_add_test(alist_pSuite, "resize functions", test_alist_resize)) ||
+      (NULL ==
+       CU_add_test(alist_pSuite, "stack functions", test_alist_stack)) ||
       /* map tests */
       (NULL == CU_add_test(map_pSuite, "basic functions", test_map_basic)) ||
       (NULL == CU_add_test(map_pSuite, "bucket filling", test_map_buckets))) {
